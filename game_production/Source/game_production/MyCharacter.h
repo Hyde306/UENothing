@@ -11,70 +11,62 @@ class GAME_PRODUCTION_API AMyCharacter : public ACharacter
     GENERATED_BODY()
 
 public:
-    // コンストラクタ
-    // コンポーネントの初期化などを行う
     AMyCharacter();
 
 protected:
-    // ゲーム開始時またはスポーン時に呼ばれる
     virtual void BeginPlay() override;
-
-    // プレイヤー入力を設定する関数
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+    virtual void Tick(float DeltaTime) override;
 
-    // ==========================
-    // 入力処理関連
-    // ==========================
-
-    // 移動入力処理
-    // WASD や 左スティックの入力値を受け取り、キャラクターを移動させる
+    // ========= 入力処理 =========
     void Move(const FInputActionValue& Value);
-
-    // 視点操作処理
-    // マウスや右スティックの入力値を受け取り、カメラの向きを変更する
     void Look(const FInputActionValue& Value);
-
-    // ジャンプ開始処理
-    // ジャンプボタンが押されたときに呼ばれる
     void StartJump();
-
-    // ジャンプ終了処理
-    // ジャンプボタンが離されたときに呼ばれる
     void StopJump();
+    void StartRun();
+    void StopRun();
 
-protected:
-    // ==========================
-    // Enhanced Input 関連
-    // ==========================
-
-    // プレイヤー用の入力マッピングコンテキスト
-    // 各アクション（移動・ジャンプ・視点操作など）を紐づける設定
+    // ========= Enhanced Input =========
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     class UInputMappingContext* IMC_Player;
 
-    // 移動アクション（WASD入力など）
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     class UInputAction* IA_Move;
 
-    // ジャンプアクション（スペースキーなど）
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     class UInputAction* IA_Jump;
 
-    // 視点操作アクション（マウス・右スティック）
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     class UInputAction* IA_Look;
 
-    // ==========================
-    // カメラ関連コンポーネント
-    // ==========================
+    UPROPERTY(EditDefaultsOnly, Category = "Input")
+    class UInputAction* IA_Run;
 
-    // カメラ用のスプリングアーム
-    // キャラクターから一定距離を保ってカメラを追従させる
+    // ========= カメラ =========
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
     class USpringArmComponent* SpringArm;
 
-    // 実際に表示されるカメラ
-    // スプリングアームの先端にアタッチされ、プレイヤー視点を制御する
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
     class UCameraComponent* FollowCamera;
+
+    // ========= アニメーション =========
+    UPROPERTY(EditAnywhere, Category = "Animation")
+    class UAnimMontage* IdleMontage;
+
+    UPROPERTY(EditAnywhere, Category = "Animation")
+    class UAnimMontage* WalkMontage;
+
+    UPROPERTY(EditAnywhere, Category = "Animation")
+    class UAnimMontage* RunMontage;
+
+    UPROPERTY(EditAnywhere, Category = "Animation")
+    class UAnimMontage* JumpMontage;
+
+    // ========= 状態管理 =========
+    bool bIsMoving = false;
+    bool bIsRunning = false;
+    bool bIsJumping = false;
+
+    void UpdateAnimation();
+    void PlaySmoothAnimation(UAnimMontage* MontageToPlay, float BlendTime = 0.2f);
 };
