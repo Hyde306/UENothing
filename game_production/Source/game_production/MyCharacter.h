@@ -17,7 +17,6 @@ protected:
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
-    // ===== 入力処理 =====
     void Move(const FInputActionValue& Value);
     void Look(const FInputActionValue& Value);
     void StartJump();
@@ -25,7 +24,7 @@ protected:
     void StartRun();
     void StopRun();
 
-    // ===== Enhanced Input 設定 =====
+    // ===== Enhanced Input =====
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     class UInputMappingContext* IMC_Player;
 
@@ -41,7 +40,7 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     class UInputAction* IA_Run;
 
-    // ===== カメラ設定 =====
+    // ===== カメラ =====
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
     class USpringArmComponent* SpringArm;
 
@@ -49,7 +48,11 @@ protected:
     class UCameraComponent* FollowCamera;
 
 public:
-    // AnimBPにExposeしてもいいようにBlueprintReadOnly
+    // ===== キャラクター状態 =====
+    // Blueprint（ABP）から参照できるようにBlueprintReadOnlyを追加
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bIsRunning = false;
+
+    UPROPERTY(BlueprintReadOnly, Category = "State")
+    bool bIsInPhotoMode = false;
 };
