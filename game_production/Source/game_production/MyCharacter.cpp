@@ -105,11 +105,13 @@ void AMyCharacter::Look(const FInputActionValue& Value)
 // ===== ジャンプ =====
 void AMyCharacter::StartJump()
 {
+    bIsJumping = true;
     Jump();
 }
 
 void AMyCharacter::StopJump()
 {
+    bIsJumping = false;
     StopJumping();
 }
 

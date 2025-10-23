@@ -55,4 +55,7 @@ public:
 
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bIsInPhotoMode = false;
+
+    UPROPERTY(BlueprintReadOnly, Category = "State")
+    bool bIsJumping = false;
 };
