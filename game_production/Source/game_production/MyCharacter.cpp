@@ -5,7 +5,11 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "TimerManager.h"
 
+// ===========================
+// コンストラクタ
+// ===========================
 AMyCharacter::AMyCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -33,11 +37,13 @@ AMyCharacter::AMyCharacter()
     GetCharacterMovement()->MaxWalkSpeed = 300.f; // 歩き速度
 }
 
+// ===========================
+// BeginPlay
+// ===========================
 void AMyCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-    // Enhanced Input のコンテキストを追加
     if (APlayerController* PC = Cast<APlayerController>(Controller))
     {
         if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
@@ -47,39 +53,47 @@ void AMyCharacter::BeginPlay()
                 Subsystem->AddMappingContext(IMC_Player, 0);
         }
     }
+
 }
 
+// ===========================
+// 入力設定
+// ===========================
 void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
 
     if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent))
     {
-        // 移動
         if (IA_Move)
             EnhancedInput->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AMyCharacter::Move);
 
-        // カメラ操作
         if (IA_Look)
             EnhancedInput->BindAction(IA_Look, ETriggerEvent::Triggered, this, &AMyCharacter::Look);
 
-        // ジャンプ
         if (IA_Jump)
         {
             EnhancedInput->BindAction(IA_Jump, ETriggerEvent::Started, this, &AMyCharacter::StartJump);
             EnhancedInput->BindAction(IA_Jump, ETriggerEvent::Completed, this, &AMyCharacter::StopJump);
         }
 
-        // 走る（Shift）
         if (IA_Run)
         {
             EnhancedInput->BindAction(IA_Run, ETriggerEvent::Started, this, &AMyCharacter::StartRun);
             EnhancedInput->BindAction(IA_Run, ETriggerEvent::Completed, this, &AMyCharacter::StopRun);
         }
+
+        // === 撮影用アクション（Enterキーなど） ===
+        if (IA_TakePhoto)
+        {
+            EnhancedInput->BindAction(IA_TakePhoto, ETriggerEvent::Started, this, &AMyCharacter::StartTakePhoto);
+        }
     }
 }
 
-// ===== 移動処理 =====
+// ===========================
+// 移動処理
+// ===========================
 void AMyCharacter::Move(const FInputActionValue& Value)
 {
     FVector2D Input = Value.Get<FVector2D>();
@@ -94,7 +108,9 @@ void AMyCharacter::Move(const FInputActionValue& Value)
     }
 }
 
-// ===== カメラ操作 =====
+// ===========================
+// カメラ操作
+// ===========================
 void AMyCharacter::Look(const FInputActionValue& Value)
 {
     FVector2D Axis = Value.Get<FVector2D>();
@@ -102,7 +118,9 @@ void AMyCharacter::Look(const FInputActionValue& Value)
     AddControllerPitchInput(Axis.Y * -1.0f);
 }
 
-// ===== ジャンプ =====
+// ===========================
+// ジャンプ
+// ===========================
 void AMyCharacter::StartJump()
 {
     bIsJumping = true;
@@ -115,15 +133,42 @@ void AMyCharacter::StopJump()
     StopJumping();
 }
 
-// ===== 走る（Shift） =====
+// ===========================
+// 走る
+// ===========================
 void AMyCharacter::StartRun()
 {
     bIsRunning = true;
-    GetCharacterMovement()->MaxWalkSpeed = 600.f; // 走り速度
+    GetCharacterMovement()->MaxWalkSpeed = 600.f;
 }
 
 void AMyCharacter::StopRun()
 {
     bIsRunning = false;
-    GetCharacterMovement()->MaxWalkSpeed = 300.f; // 歩き速度
+    GetCharacterMovement()->MaxWalkSpeed = 300.f;
+}
+
+// ===========================
+// 撮影アニメーション（Enterキー）
+// ===========================
+void AMyCharacter::StartTakePhoto()
+{
+    UE_LOG(LogTemp, Warning, TEXT("📸 StartTakePhoto called!"));
+
+    if (bIsTakingPhoto) return; // 連打防止
+
+    bIsTakingPhoto = true;
+    UE_LOG(LogTemp, Warning, TEXT("📷 撮影開始！"));
+
+    // 撮影中は移動を一時的に無効化
+    GetCharacterMovement()->DisableMovement();
+
+    // 1.0秒後に解除
+    FTimerHandle Handle;
+    GetWorldTimerManager().SetTimer(Handle, [this]()
+        {
+            bIsTakingPhoto = false;
+            UE_LOG(LogTemp, Warning, TEXT("📷 撮影終了！"));
+            GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+        }, 1.0f, false);
 }
