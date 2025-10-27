@@ -17,12 +17,14 @@ protected:
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
+    // ===== 入力処理 =====
     void Move(const FInputActionValue& Value);
     void Look(const FInputActionValue& Value);
     void StartJump();
     void StopJump();
     void StartRun();
     void StopRun();
+    void StartTakePhoto();  // ← 撮影アニメーション開始
 
     // ===== Enhanced Input =====
     UPROPERTY(EditDefaultsOnly, Category = "Input")
@@ -40,6 +42,10 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     class UInputAction* IA_Run;
 
+    // クリック撮影用 InputAction
+    UPROPERTY(EditDefaultsOnly, Category = "Input")
+    class UInputAction* IA_TakePhoto;
+
     // ===== カメラ =====
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
     class USpringArmComponent* SpringArm;
@@ -49,7 +55,6 @@ protected:
 
 public:
     // ===== キャラクター状態 =====
-    // Blueprint（ABP）から参照できるようにBlueprintReadOnlyを追加
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bIsRunning = false;
 
@@ -58,4 +63,8 @@ public:
 
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bIsJumping = false;
+
+    // ★撮影中フラグ
+    UPROPERTY(BlueprintReadOnly, Category = "State")
+    bool bIsTakingPhoto = false;
 };
