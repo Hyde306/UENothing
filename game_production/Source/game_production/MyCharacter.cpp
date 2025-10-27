@@ -5,6 +5,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Engine/Engine.h"
 #include "TimerManager.h"
 
 // ===========================
@@ -21,8 +23,14 @@ AMyCharacter::AMyCharacter()
     SpringArm->bUsePawnControlRotation = true;
 
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-    FollowCamera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
+    FollowCamera->SetupAttachment(SpringArm);
     FollowCamera->bUsePawnControlRotation = false;
+
+    // ===== フォトモード用カメラ =====
+    PhotoCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("PhotoCamera"));
+    PhotoCamera->SetupAttachment(GetMesh());
+    PhotoCamera->SetRelativeLocation(FVector(0.f, 20.f, 160.f));
+    PhotoCamera->SetActive(false);
 
     // ===== キャラ回転設定 =====
     bUseControllerRotationYaw = false;
@@ -33,8 +41,8 @@ AMyCharacter::AMyCharacter()
     GetCharacterMovement()->AirControl = 0.35f;
     GetCharacterMovement()->JumpZVelocity = 420.f;
 
-    // ===== 移動速度初期化 =====
-    GetCharacterMovement()->MaxWalkSpeed = 300.f; // 歩き速度
+    // ===== 初期速度 =====
+    GetCharacterMovement()->MaxWalkSpeed = 300.f;
 }
 
 // ===========================
@@ -53,7 +61,6 @@ void AMyCharacter::BeginPlay()
                 Subsystem->AddMappingContext(IMC_Player, 0);
         }
     }
-
 }
 
 // ===========================
@@ -83,11 +90,11 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
             EnhancedInput->BindAction(IA_Run, ETriggerEvent::Completed, this, &AMyCharacter::StopRun);
         }
 
-        // === 撮影用アクション（Enterキーなど） ===
+        if (IA_TogglePhotoMode)
+            EnhancedInput->BindAction(IA_TogglePhotoMode, ETriggerEvent::Started, this, &AMyCharacter::TogglePhotoMode);
+
         if (IA_TakePhoto)
-        {
-            EnhancedInput->BindAction(IA_TakePhoto, ETriggerEvent::Started, this, &AMyCharacter::StartTakePhoto);
-        }
+            EnhancedInput->BindAction(IA_TakePhoto, ETriggerEvent::Started, this, &AMyCharacter::TakePhoto);
     }
 }
 
@@ -96,17 +103,32 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 // ===========================
 void AMyCharacter::Move(const FInputActionValue& Value)
 {
+    if (bIsInPhotoMode) return;
+
     FVector2D Input = Value.Get<FVector2D>();
-    if (Controller)
+    if (Controller && (Input.X != 0.f || Input.Y != 0.f))
     {
-        FRotator YawRot(0, Controller->GetControlRotation().Yaw, 0);
+        // カメラの回転を取得
+        FRotator ControlRot = Controller->GetControlRotation();
+        FRotator YawRot(0, ControlRot.Yaw, 0);
+
+        // 前方・右方向のベクトルを計算
         FVector Forward = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
         FVector Right = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
 
+        // 移動
         AddMovementInput(Forward, Input.Y);
         AddMovementInput(Right, Input.X);
+
+        // ==== ★キャラクターの向きをカメラに合わせて回す ====
+        if (Input.SizeSquared() > 0.0f)
+        {
+            FRotator TargetRot = YawRot;
+            SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRot, GetWorld()->GetDeltaSeconds(), 10.f));//ここの数値を大きくしたら早く回転
+        }
     }
 }
+
 
 // ===========================
 // カメラ操作
@@ -123,6 +145,8 @@ void AMyCharacter::Look(const FInputActionValue& Value)
 // ===========================
 void AMyCharacter::StartJump()
 {
+    if (bIsInPhotoMode) return;
+
     bIsJumping = true;
     Jump();
 }
@@ -133,11 +157,21 @@ void AMyCharacter::StopJump()
     StopJumping();
 }
 
+void AMyCharacter::Landed(const FHitResult& Hit)
+{
+    Super::Landed(Hit);
+
+    // 着地したらジャンプフラグをリセット
+    bIsJumping = false;
+}
+
 // ===========================
 // 走る
 // ===========================
 void AMyCharacter::StartRun()
 {
+    if (bIsInPhotoMode) return;
+
     bIsRunning = true;
     GetCharacterMovement()->MaxWalkSpeed = 600.f;
 }
@@ -149,26 +183,53 @@ void AMyCharacter::StopRun()
 }
 
 // ===========================
-// 撮影アニメーション（Enterキー）
+// フォトモード切替
 // ===========================
-void AMyCharacter::StartTakePhoto()
+void AMyCharacter::TogglePhotoMode()
 {
-    UE_LOG(LogTemp, Warning, TEXT("📸 StartTakePhoto called!"));
+    bIsInPhotoMode = !bIsInPhotoMode;
 
-    if (bIsTakingPhoto) return; // 連打防止
+    if (APlayerController* PC = Cast<APlayerController>(GetController()))
+    {
+        if (bIsInPhotoMode)
+        {
+            FollowCamera->SetActive(false);
+            PhotoCamera->SetActive(true);
+            GetMesh()->SetOwnerNoSee(true); // ← キャラの体を非表示
+
+            PC->SetViewTargetWithBlend(this, 0.3f);
+            UE_LOG(LogTemp, Warning, TEXT(" Photo Mode ON"));
+        }
+        else
+        {
+            PhotoCamera->SetActive(false);
+            FollowCamera->SetActive(true);
+            GetMesh()->SetOwnerNoSee(false); // ← 戻す
+
+            PC->SetViewTargetWithBlend(this, 0.3f);
+            UE_LOG(LogTemp, Warning, TEXT(" Photo Mode OFF"));
+        }
+    }
+}
+
+// ===========================
+// 撮影処理
+// ===========================
+void AMyCharacter::TakePhoto()
+{
+    if (!bIsInPhotoMode) return;
+    if (bIsTakingPhoto) return;
 
     bIsTakingPhoto = true;
-    UE_LOG(LogTemp, Warning, TEXT("📷 撮影開始！"));
+    UE_LOG(LogTemp, Warning, TEXT(" 撮影！"));
 
-    // 撮影中は移動を一時的に無効化
-    GetCharacterMovement()->DisableMovement();
+    // ここに撮影音・エフェクトなど
+    // UGameplayStatics::PlaySound2D(this, TakePhotoSound);
 
-    // 1.0秒後に解除
-    FTimerHandle Handle;
-    GetWorldTimerManager().SetTimer(Handle, [this]()
+    // 撮影後にフラグ解除（クールタイム1秒）
+    FTimerHandle ResetHandle;
+    GetWorldTimerManager().SetTimer(ResetHandle, [this]()
         {
             bIsTakingPhoto = false;
-            UE_LOG(LogTemp, Warning, TEXT("📷 撮影終了！"));
-            GetCharacterMovement()->SetMovementMode(MOVE_Walking);
         }, 1.0f, false);
 }

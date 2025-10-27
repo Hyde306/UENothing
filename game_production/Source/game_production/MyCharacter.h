@@ -16,6 +16,7 @@ public:
 protected:
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+    virtual void Landed(const FHitResult& Hit) override;
 
     // ===== 入力処理 =====
     void Move(const FInputActionValue& Value);
@@ -24,7 +25,8 @@ protected:
     void StopJump();
     void StartRun();
     void StopRun();
-    void StartTakePhoto();  // ← 撮影アニメーション開始
+    void TogglePhotoMode();  // ← フォトモード切替
+    void TakePhoto();        // ← 撮影実行
 
     // ===== Enhanced Input =====
     UPROPERTY(EditDefaultsOnly, Category = "Input")
@@ -42,7 +44,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     class UInputAction* IA_Run;
 
-    // クリック撮影用 InputAction
+    UPROPERTY(EditDefaultsOnly, Category = "Input")
+    class UInputAction* IA_TogglePhotoMode;
+
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     class UInputAction* IA_TakePhoto;
 
@@ -53,18 +57,21 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
     class UCameraComponent* FollowCamera;
 
+    // フォトモード用（1人称カメラ）
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+    class UCameraComponent* PhotoCamera;
+
 public:
-    // ===== キャラクター状態 =====
+    // ===== キャラクター状態（ABPで参照可） =====
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bIsRunning = false;
 
     UPROPERTY(BlueprintReadOnly, Category = "State")
-    bool bIsInPhotoMode = false;
-
-    UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bIsJumping = false;
 
-    // ★撮影中フラグ
+    UPROPERTY(BlueprintReadOnly, Category = "State")
+    bool bIsInPhotoMode = false;
+
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bIsTakingPhoto = false;
 };
