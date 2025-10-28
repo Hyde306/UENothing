@@ -60,6 +60,9 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
     class UCameraComponent* PhotoCamera;
 
+    // ===== フォトモード用カメラ回転 =====
+    FRotator PhotoCameraRotation;
+
 public:
     // ===== キャラクター状態（ABPで参照可） =====
     UPROPERTY(BlueprintReadOnly, Category = "State")

@@ -124,8 +124,33 @@ void AMyCharacter::Move(const FInputActionValue& Value)
 void AMyCharacter::Look(const FInputActionValue& Value)
 {
     FVector2D Axis = Value.Get<FVector2D>();
-    AddControllerYawInput(Axis.X);
-    AddControllerPitchInput(Axis.Y * -1.0f);
+
+    if (bIsInPhotoMode)
+    {
+        // ===== フォトモード時はカメラのみ回す（今のままでOK） =====
+        PhotoCameraRotation.Yaw += Axis.X;
+        PhotoCameraRotation.Pitch = FMath::Clamp(PhotoCameraRotation.Pitch + Axis.Y, -80.f, 80.f);
+        PhotoCamera->SetRelativeRotation(PhotoCameraRotation);
+    }
+    else
+    {
+        // ===== 通常モード（三人称） =====
+        if (Controller)
+        {
+            // ※ここで「マウス上＝上を向く」方向に直す
+            float NewPitch = Controller->GetControlRotation().Pitch + Axis.Y;
+
+            // ピッチの範囲制限（真上・真下を向きすぎない）
+            NewPitch = FMath::ClampAngle(NewPitch, -60.f, 60.f);
+
+            // Yaw（左右）は制限なし
+            float NewYaw = Controller->GetControlRotation().Yaw + Axis.X;
+
+            // 新しい回転を適用
+            FRotator NewRot(NewPitch, NewYaw, 0.0f);
+            Controller->SetControlRotation(NewRot);
+        }
+    }
 }
 
 // ===========================
@@ -173,20 +198,33 @@ void AMyCharacter::TogglePhotoMode()
     {
         if (bIsInPhotoMode)
         {
+            // === フォトモード ON ===
             FollowCamera->SetActive(false);
             PhotoCamera->SetActive(true);
+
+            // キャラクターのMeshを非表示にして手を消す
+            GetMesh()->SetOwnerNoSee(true);
+
+            
+
             PC->SetViewTargetWithBlend(this, 0.3f);
             UE_LOG(LogTemp, Warning, TEXT("📷 Photo Mode ON"));
         }
         else
         {
+            // === フォトモード OFF ===
             PhotoCamera->SetActive(false);
             FollowCamera->SetActive(true);
+
+            // キャラクターのMeshを再表示
+            GetMesh()->SetOwnerNoSee(false);
+
             PC->SetViewTargetWithBlend(this, 0.3f);
             UE_LOG(LogTemp, Warning, TEXT("📷 Photo Mode OFF"));
         }
     }
 }
+
 
 // ===========================
 // 撮影処理
