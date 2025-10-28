@@ -9,6 +9,7 @@
 #include "Engine/Engine.h"
 #include "TimerManager.h"
 #include "HighResScreenshot.h"
+#include "PhotoSpot.h"
 
 // ===========================
 // コンストラクタ
@@ -270,4 +271,21 @@ void AMyCharacter::TakePhoto()
             bIsTakingPhoto = false;
             UE_LOG(LogTemp, Warning, TEXT("📸 撮影終了！"));
         }, 1.0f, false);
+
+    // ==== 撮影後にフォトスポットスコア判定 ====
+    TArray<AActor*> FoundSpots;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), APhotoSpot::StaticClass(), FoundSpots);
+
+    for (AActor* Actor : FoundSpots)
+    {
+        APhotoSpot* Spot = Cast<APhotoSpot>(Actor);
+        if (Spot && Spot->CanTakePhoto())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("📷 Spot '%s' 撮影成功！ +%d点"),
+                *Spot->GetSpotName(), Spot->GetScore());
+
+            // 今はログだけ。後でUI表示など追加可。
+        }
+    }
+
 }
