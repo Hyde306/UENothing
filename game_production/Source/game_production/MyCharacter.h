@@ -16,7 +16,6 @@ public:
 protected:
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
-    virtual void Landed(const FHitResult& Hit) override;
 
     // ===== “ü—Íˆ— =====
     void Move(const FInputActionValue& Value);

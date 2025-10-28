@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/Engine.h"
 #include "TimerManager.h"
+#include "HighResScreenshot.h"
 
 // ===========================
 // コンストラクタ
@@ -103,32 +104,19 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 // ===========================
 void AMyCharacter::Move(const FInputActionValue& Value)
 {
-    if (bIsInPhotoMode) return;
+    if (bIsInPhotoMode) return; // フォトモード中は動かない
 
     FVector2D Input = Value.Get<FVector2D>();
-    if (Controller && (Input.X != 0.f || Input.Y != 0.f))
+    if (Controller)
     {
-        // カメラの回転を取得
-        FRotator ControlRot = Controller->GetControlRotation();
-        FRotator YawRot(0, ControlRot.Yaw, 0);
-
-        // 前方・右方向のベクトルを計算
+        FRotator YawRot(0, Controller->GetControlRotation().Yaw, 0);
         FVector Forward = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
         FVector Right = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
 
-        // 移動
         AddMovementInput(Forward, Input.Y);
         AddMovementInput(Right, Input.X);
-
-        // ==== ★キャラクターの向きをカメラに合わせて回す ====
-        if (Input.SizeSquared() > 0.0f)
-        {
-            FRotator TargetRot = YawRot;
-            SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRot, GetWorld()->GetDeltaSeconds(), 10.f));//ここの数値を大きくしたら早く回転
-        }
     }
 }
-
 
 // ===========================
 // カメラ操作
@@ -155,14 +143,6 @@ void AMyCharacter::StopJump()
 {
     bIsJumping = false;
     StopJumping();
-}
-
-void AMyCharacter::Landed(const FHitResult& Hit)
-{
-    Super::Landed(Hit);
-
-    // 着地したらジャンプフラグをリセット
-    bIsJumping = false;
 }
 
 // ===========================
@@ -195,19 +175,15 @@ void AMyCharacter::TogglePhotoMode()
         {
             FollowCamera->SetActive(false);
             PhotoCamera->SetActive(true);
-            GetMesh()->SetOwnerNoSee(true); // ← キャラの体を非表示
-
             PC->SetViewTargetWithBlend(this, 0.3f);
-            UE_LOG(LogTemp, Warning, TEXT(" Photo Mode ON"));
+            UE_LOG(LogTemp, Warning, TEXT("📷 Photo Mode ON"));
         }
         else
         {
             PhotoCamera->SetActive(false);
             FollowCamera->SetActive(true);
-            GetMesh()->SetOwnerNoSee(false); // ← 戻す
-
             PC->SetViewTargetWithBlend(this, 0.3f);
-            UE_LOG(LogTemp, Warning, TEXT(" Photo Mode OFF"));
+            UE_LOG(LogTemp, Warning, TEXT("📷 Photo Mode OFF"));
         }
     }
 }
@@ -221,15 +197,24 @@ void AMyCharacter::TakePhoto()
     if (bIsTakingPhoto) return;
 
     bIsTakingPhoto = true;
-    UE_LOG(LogTemp, Warning, TEXT(" 撮影！"));
+    UE_LOG(LogTemp, Warning, TEXT("📸 撮影開始！"));
 
-    // ここに撮影音・エフェクトなど
+    // ==== スクリーンショット保存 ====
+    FString ScreenshotName = FString::Printf(TEXT("Photo_%s.png"),
+        *FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S")));
+    FString SavePath = FPaths::ProjectSavedDir() + "Screenshots/" + ScreenshotName;
+
+    FScreenshotRequest::RequestScreenshot(SavePath, false, false);
+    UE_LOG(LogTemp, Warning, TEXT("📂 スクリーンショット保存: %s"), *SavePath);
+
+    // 撮影音などを追加したい場合
     // UGameplayStatics::PlaySound2D(this, TakePhotoSound);
 
-    // 撮影後にフラグ解除（クールタイム1秒）
+    // ==== 撮影後1秒クールタイム ====
     FTimerHandle ResetHandle;
     GetWorldTimerManager().SetTimer(ResetHandle, [this]()
         {
             bIsTakingPhoto = false;
+            UE_LOG(LogTemp, Warning, TEXT("📸 撮影終了！"));
         }, 1.0f, false);
 }
