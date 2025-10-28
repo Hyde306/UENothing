@@ -10,6 +10,7 @@
 #include "TimerManager.h"
 #include "HighResScreenshot.h"
 #include "PhotoSpot.h"
+#include"PhotoTarget.h"
 
 // ===========================
 // コンストラクタ
@@ -252,6 +253,42 @@ void AMyCharacter::TakePhoto()
 
     bIsTakingPhoto = true;
     UE_LOG(LogTemp, Warning, TEXT("📸 撮影開始！"));
+
+
+    // ==== カメラ前方にレイを飛ばす ====
+    FVector Start = PhotoCamera->GetComponentLocation();
+    FVector End = Start + (PhotoCamera->GetForwardVector() * 5000.0f); // 5m～50m程度まで届く距離
+
+    FHitResult Hit;
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
+
+    if (bHit)
+    {
+        if (APhotoTarget* Target = Cast<APhotoTarget>(Hit.GetActor()))
+        {
+            if (!Target->bAlreadyCaptured)
+            {
+                Target->bAlreadyCaptured = true;
+                UE_LOG(LogTemp, Warning, TEXT("🎯 '%s' 撮影成功！ +%d点"),
+                    *Target->TargetName, Target->ScoreValue);
+            }
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("⚠️ '%s' はすでに撮影済み！"), *Target->TargetName);
+            }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("❌ 撮影対象ではありません。"));
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("❌ 何もヒットしませんでした。"));
+    }
 
     // ==== スクリーンショット保存 ====
     FString ScreenshotName = FString::Printf(TEXT("Photo_%s.png"),
