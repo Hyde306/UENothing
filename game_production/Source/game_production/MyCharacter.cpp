@@ -23,6 +23,9 @@ AMyCharacter::AMyCharacter()
     SpringArm->TargetArmLength = 300.f;
     SpringArm->bUsePawnControlRotation = true;
 
+    // 🚫 カメラが壁や床に当たって距離が変わらないようにする
+    SpringArm->bDoCollisionTest = false;
+
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     FollowCamera->SetupAttachment(SpringArm);
     FollowCamera->bUsePawnControlRotation = false;
@@ -35,7 +38,7 @@ AMyCharacter::AMyCharacter()
 
     // ===== キャラ回転設定 =====
     bUseControllerRotationYaw = false;
-    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->bOrientRotationToMovement = false; // ★ カメラではなく入力方向で回す
     GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
 
     // ===== 空中制御設定 =====
@@ -104,19 +107,33 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 // ===========================
 void AMyCharacter::Move(const FInputActionValue& Value)
 {
-    if (bIsInPhotoMode) return; // フォトモード中は動かない
+    if (bIsInPhotoMode) return;
 
     FVector2D Input = Value.Get<FVector2D>();
-    if (Controller)
+    if (Controller && (Input.X != 0.f || Input.Y != 0.f))
     {
-        FRotator YawRot(0, Controller->GetControlRotation().Yaw, 0);
+        // カメラの向きを取得（Yawのみ）
+        FRotator ControlRot = Controller->GetControlRotation();
+        FRotator YawRot(0.f, ControlRot.Yaw, 0.f);
+
+        // 移動方向を算出
         FVector Forward = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
         FVector Right = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
+        FVector MoveDir = (Forward * Input.Y) + (Right * Input.X);
 
-        AddMovementInput(Forward, Input.Y);
-        AddMovementInput(Right, Input.X);
+        // 実際に移動
+        AddMovementInput(MoveDir.GetSafeNormal());
+
+        // キャラクターを移動方向に回転
+        if (!MoveDir.IsNearlyZero())
+        {
+            FRotator TargetRot = MoveDir.Rotation();
+            FRotator SmoothRot = FMath::RInterpTo(GetActorRotation(), TargetRot, GetWorld()->GetDeltaSeconds(), 10.f);
+            SetActorRotation(SmoothRot);
+        }
     }
 }
+
 
 // ===========================
 // カメラ操作
@@ -204,8 +221,6 @@ void AMyCharacter::TogglePhotoMode()
 
             // キャラクターのMeshを非表示にして手を消す
             GetMesh()->SetOwnerNoSee(true);
-
-            
 
             PC->SetViewTargetWithBlend(this, 0.3f);
             UE_LOG(LogTemp, Warning, TEXT("📷 Photo Mode ON"));
