@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -15,22 +15,28 @@ public:
 protected:
     virtual void BeginPlay() override;
 
-    // B‰e”»’è”ÍˆÍ
+    // æ’®å½±åˆ¤å®šç¯„å›²
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PhotoSpot")
     class UBoxComponent* TriggerBox;
 
-    // ƒXƒ|ƒbƒg–¼‚âƒXƒRƒA
+public:
+    // ã“ã®ã‚¹ãƒãƒƒãƒˆã§æ’®å½±ã§ãã‚‹ã‚¿ãƒ¼ã‚²ãƒƒãƒˆ
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
+    class APhotoTarget* LinkedTarget;
+
+    // ã‚¹ãƒãƒƒãƒˆåã‚„ã‚¹ã‚³ã‚¢
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
     FString SpotName = "Unnamed Spot";
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
     int32 ScoreValue = 100;
 
-    // ƒvƒŒƒCƒ„[‚ª”ÍˆÍ“à‚©
+protected:
+    // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãŒç¯„å›²å†…ã‹
     bool bPlayerInside = false;
 
 public:
-    // ƒgƒŠƒK[ƒCƒxƒ“ƒg
+    // ãƒˆãƒªã‚¬ãƒ¼ã‚¤ãƒ™ãƒ³ãƒˆ
     UFUNCTION()
     void OnPlayerEnter(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
         UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
@@ -40,7 +46,7 @@ public:
     void OnPlayerExit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
         UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-    // B‰e”»’è
+    // æ’®å½±åˆ¤å®š
     bool CanTakePhoto() const { return bPlayerInside; }
 
     int32 GetScore() const { return ScoreValue; }

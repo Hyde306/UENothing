@@ -225,7 +225,7 @@ void AMyCharacter::TogglePhotoMode()
             GetMesh()->SetOwnerNoSee(true);
 
             PC->SetViewTargetWithBlend(this, 0.3f);
-            UE_LOG(LogTemp, Warning, TEXT("📷 Photo Mode ON"));
+            UE_LOG(LogTemp, Warning, TEXT("Photo Mode ON"));
         }
         else
         {
@@ -237,7 +237,7 @@ void AMyCharacter::TogglePhotoMode()
             GetMesh()->SetOwnerNoSee(false);
 
             PC->SetViewTargetWithBlend(this, 0.3f);
-            UE_LOG(LogTemp, Warning, TEXT("📷 Photo Mode OFF"));
+            UE_LOG(LogTemp, Warning, TEXT("Photo Mode OFF"));
         }
     }
 }
@@ -252,7 +252,7 @@ void AMyCharacter::TakePhoto()
     if (bIsTakingPhoto) return;
 
     bIsTakingPhoto = true;
-    UE_LOG(LogTemp, Warning, TEXT("📸 撮影開始！"));
+    UE_LOG(LogTemp, Warning, TEXT("撮影開始！"));
 
 
     // ==== カメラ前方にレイを飛ばす ====
@@ -272,7 +272,7 @@ void AMyCharacter::TakePhoto()
             if (!Target->bAlreadyCaptured)
             {
                 Target->bAlreadyCaptured = true;
-                UE_LOG(LogTemp, Warning, TEXT("🎯 '%s' 撮影成功！ +%d点"),
+                UE_LOG(LogTemp, Warning, TEXT("🎯 '%s' ターゲット撮影成功！"),
                     *Target->TargetName, Target->ScoreValue);
             }
             else
@@ -296,7 +296,7 @@ void AMyCharacter::TakePhoto()
     FString SavePath = FPaths::ProjectSavedDir() + "Screenshots/" + ScreenshotName;
 
     FScreenshotRequest::RequestScreenshot(SavePath, false, false);
-    UE_LOG(LogTemp, Warning, TEXT("📂 スクリーンショット保存: %s"), *SavePath);
+    UE_LOG(LogTemp, Warning, TEXT("スクリーンショット保存: %s"), *SavePath);
 
     // 撮影音などを追加したい場合
     // UGameplayStatics::PlaySound2D(this, TakePhotoSound);
@@ -306,23 +306,38 @@ void AMyCharacter::TakePhoto()
     GetWorldTimerManager().SetTimer(ResetHandle, [this]()
         {
             bIsTakingPhoto = false;
-            UE_LOG(LogTemp, Warning, TEXT("📸 撮影終了！"));
+            UE_LOG(LogTemp, Warning, TEXT("撮影終了！"));
         }, 1.0f, false);
 
     // ==== 撮影後にフォトスポットスコア判定 ====
     TArray<AActor*> FoundSpots;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), APhotoSpot::StaticClass(), FoundSpots);
 
+    bool bScored = false;
+
     for (AActor* Actor : FoundSpots)
     {
         APhotoSpot* Spot = Cast<APhotoSpot>(Actor);
-        if (Spot && Spot->CanTakePhoto())
+        if (Spot && Spot->CanTakePhoto()) // プレイヤーがスポット内
         {
-            UE_LOG(LogTemp, Warning, TEXT("📷 Spot '%s' 撮影成功！ +%d点"),
-                *Spot->GetSpotName(), Spot->GetScore());
-
-            // 今はログだけ。後でUI表示など追加可。
+            // Spotが対応するターゲットを持っていて、それが今回撮影されたターゲットと一致していればスコア加算
+            if (APhotoTarget* Target = Cast<APhotoTarget>(Hit.GetActor()))
+            {
+                if (Spot->LinkedTarget == Target)
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("🎯 Spot '%s' で '%s' を撮影成功！ +%d点"),
+                        *Spot->GetSpotName(), *Target->TargetName, Spot->GetScore());
+                    bScored = true;
+                    break;
+                }
+            }
         }
     }
+
+    if (!bScored)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("⚠️ スポット外、または対応ターゲットでないためスコア無効"));
+    }
+
 
 }
