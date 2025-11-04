@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "PhotoTarget.h" // ← generated.h より前に書く！
 #include "PhotoSpot.generated.h"
 
 UCLASS()
@@ -21,7 +22,7 @@ protected:
 
 public:
     // このスポットで撮影できるターゲット
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
+    UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "PhotoSpot")
     class APhotoTarget* LinkedTarget;
 
     // スポット名やスコア
@@ -32,11 +33,9 @@ public:
     int32 ScoreValue = 100;
 
 protected:
-    // プレイヤーが範囲内か
     bool bPlayerInside = false;
 
 public:
-    // トリガーイベント
     UFUNCTION()
     void OnPlayerEnter(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
         UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
@@ -46,9 +45,7 @@ public:
     void OnPlayerExit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
         UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-    // 撮影判定
     bool CanTakePhoto() const { return bPlayerInside; }
-
     int32 GetScore() const { return ScoreValue; }
     FString GetSpotName() const { return SpotName; }
 };

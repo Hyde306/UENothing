@@ -28,7 +28,7 @@ void APhotoSpot::OnPlayerEnter(UPrimitiveComponent* OverlappedComp, AActor* Othe
     if (Cast<AMyCharacter>(OtherActor))
     {
         bPlayerInside = true;
-        UE_LOG(LogTemp, Warning, TEXT("📸 Player entered photo spot: %s"), *SpotName);
+        UE_LOG(LogTemp, Warning, TEXT("Player entered photo spot: %s"), *SpotName);
     }
 }
 
@@ -38,6 +38,6 @@ void APhotoSpot::OnPlayerExit(UPrimitiveComponent* OverlappedComp, AActor* Other
     if (Cast<AMyCharacter>(OtherActor))
     {
         bPlayerInside = false;
-        UE_LOG(LogTemp, Warning, TEXT("🚶 Player left photo spot: %s"), *SpotName);
+        UE_LOG(LogTemp, Warning, TEXT("Player left photo spot: %s"), *SpotName);
     }
 }
