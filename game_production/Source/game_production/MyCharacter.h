@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
+#include "Blueprint/UserWidget.h"
 #include "MyCharacter.generated.h"
 
 UCLASS()
@@ -59,6 +60,12 @@ protected:
     // フォトモード用（1人称カメラ）
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
     class UCameraComponent* PhotoCamera;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
+    TSubclassOf<UUserWidget> CameraUIClass;
+
+    UUserWidget* CameraUIInstance;
+    bool bIsCameraMode = false;
 
     // ===== フォトモード用カメラ回転 =====
     FRotator PhotoCameraRotation;

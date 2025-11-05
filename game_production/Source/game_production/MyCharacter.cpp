@@ -226,6 +226,20 @@ void AMyCharacter::TogglePhotoMode()
 
             PC->SetViewTargetWithBlend(this, 0.3f);
             UE_LOG(LogTemp, Warning, TEXT("Photo Mode ON"));
+
+            // === UIを表示 ===
+            if (CameraUIClass && !CameraUIInstance)
+            {
+                CameraUIInstance = CreateWidget<UUserWidget>(GetWorld(), CameraUIClass);
+                if (CameraUIInstance)
+                {
+                    CameraUIInstance->AddToViewport();
+                }
+            }
+            if (CameraUIInstance)
+            {
+                CameraUIInstance->SetVisibility(ESlateVisibility::Visible);
+            }
         }
         else
         {
@@ -238,7 +252,15 @@ void AMyCharacter::TogglePhotoMode()
 
             PC->SetViewTargetWithBlend(this, 0.3f);
             UE_LOG(LogTemp, Warning, TEXT("Photo Mode OFF"));
+
+            // === UIを非表示にする ===
+            if (CameraUIInstance)
+            {
+                CameraUIInstance->SetVisibility(ESlateVisibility::Hidden);
+                UE_LOG(LogTemp, Warning, TEXT("Camera UI Hidden"));
+            }
         }
+
     }
 }
 
