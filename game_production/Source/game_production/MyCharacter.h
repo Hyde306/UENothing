@@ -17,6 +17,7 @@ public:
 protected:
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+    virtual void Tick(float DeltaTime) override;
 
     // ===== ì¸óÕèàóù =====
     void Move(const FInputActionValue& Value);
@@ -63,6 +64,15 @@ protected:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
     TSubclassOf<UUserWidget> CameraUIClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
+    float NormalFOV = 90.f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
+    float PhotoModeFOV = 70.f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
+    float FOVInterpSpeed = 3.0f;
 
     UUserWidget* CameraUIInstance;
     bool bIsCameraMode = false;

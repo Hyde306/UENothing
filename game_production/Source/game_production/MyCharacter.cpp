@@ -25,7 +25,7 @@ AMyCharacter::AMyCharacter()
     SpringArm->TargetArmLength = 300.f;
     SpringArm->bUsePawnControlRotation = true;
 
-    // 🚫 カメラが壁や床に当たって距離が変わらないようにする
+    //  カメラが壁や床に当たって距離が変わらないようにする
     SpringArm->bDoCollisionTest = false;
 
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
@@ -136,7 +136,6 @@ void AMyCharacter::Move(const FInputActionValue& Value)
     }
 }
 
-
 // ===========================
 // カメラ操作
 // ===========================
@@ -172,9 +171,7 @@ void AMyCharacter::Look(const FInputActionValue& Value)
     }
 }
 
-// ===========================
 // ジャンプ
-// ===========================
 void AMyCharacter::StartJump()
 {
     if (bIsInPhotoMode) return;
@@ -220,9 +217,14 @@ void AMyCharacter::TogglePhotoMode()
             // === フォトモード ON ===
             FollowCamera->SetActive(false);
             PhotoCamera->SetActive(true);
-
             // キャラクターのMeshを非表示にして手を消す
             GetMesh()->SetOwnerNoSee(true);
+
+            PC->SetViewTargetWithBlend(this, 0.3f);
+            UE_LOG(LogTemp, Warning, TEXT("Photo Mode ON"));
+
+            // ★ FOVを狭くする
+            PhotoCamera->SetFieldOfView(PhotoModeFOV);
 
             PC->SetViewTargetWithBlend(this, 0.3f);
             UE_LOG(LogTemp, Warning, TEXT("Photo Mode ON"));
@@ -264,7 +266,6 @@ void AMyCharacter::TogglePhotoMode()
     }
 }
 
-
 // ===========================
 // 撮影処理
 // ===========================
@@ -277,7 +278,7 @@ void AMyCharacter::TakePhoto()
     UE_LOG(LogTemp, Warning, TEXT("撮影開始！"));
 
 
-    // ==== カメラ前方にレイを飛ばす ====
+    // カメラ前方にレイを飛ばす
     FVector Start = PhotoCamera->GetComponentLocation();
     FVector End = Start + (PhotoCamera->GetForwardVector() * 5000.0f); // 5m～50m程度まで届く距離
 
@@ -294,25 +295,25 @@ void AMyCharacter::TakePhoto()
             if (!Target->bAlreadyCaptured)
             {
                 Target->bAlreadyCaptured = true;
-                UE_LOG(LogTemp, Warning, TEXT("🎯 '%s' ターゲット撮影成功！"),
+                UE_LOG(LogTemp, Warning, TEXT("'%s' ターゲット撮影成功！"),
                     *Target->TargetName, Target->ScoreValue);
             }
             else
             {
-                UE_LOG(LogTemp, Warning, TEXT("⚠️ '%s' はすでに撮影済み！"), *Target->TargetName);
+                UE_LOG(LogTemp, Warning, TEXT("'%s' はすでに撮影済み！"), *Target->TargetName);
             }
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("❌ 撮影対象ではありません。"));
+            UE_LOG(LogTemp, Warning, TEXT("撮影対象ではありません。"));
         }
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("❌ 何もヒットしませんでした。"));
+        UE_LOG(LogTemp, Warning, TEXT("何もヒットしませんでした。"));
     }
 
-    // ==== スクリーンショット保存 ====
+    // スクリーンショット保存
     FString ScreenshotName = FString::Printf(TEXT("Photo_%s.png"),
         *FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S")));
     FString SavePath = FPaths::ProjectSavedDir() + "Screenshots/" + ScreenshotName;
@@ -323,7 +324,7 @@ void AMyCharacter::TakePhoto()
     // 撮影音などを追加したい場合
     // UGameplayStatics::PlaySound2D(this, TakePhotoSound);
 
-    // ==== 撮影後1秒クールタイム ====
+    // 撮影後1秒クールタイム
     FTimerHandle ResetHandle;
     GetWorldTimerManager().SetTimer(ResetHandle, [this]()
         {
@@ -347,7 +348,7 @@ void AMyCharacter::TakePhoto()
             {
                 if (Spot->LinkedTarget == Target)
                 {
-                    UE_LOG(LogTemp, Warning, TEXT("🎯 Spot '%s' で '%s' を撮影成功！ +%d点"),
+                    UE_LOG(LogTemp, Warning, TEXT("Spot '%s' で '%s' を撮影成功！ +%d点"),
                         *Spot->GetSpotName(), *Target->TargetName, Spot->GetScore());
                     bScored = true;
                     break;
@@ -358,8 +359,37 @@ void AMyCharacter::TakePhoto()
 
     if (!bScored)
     {
-        UE_LOG(LogTemp, Warning, TEXT("⚠️ スポット外、または対応ターゲットでないためスコア無効"));
+        UE_LOG(LogTemp, Warning, TEXT("スポット外、または対応ターゲットでないためスコア無効"));
     }
+}
 
+void AMyCharacter::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
 
+    // ★ FOV補間処理（ズーム演出）
+    float TargetFOV = bIsInPhotoMode ? PhotoModeFOV : NormalFOV;
+
+    if (FollowCamera && PhotoCamera)
+    {
+        // 現在アクティブなカメラを探す
+        UCameraComponent* ActiveCam = nullptr;
+
+        if (FollowCamera->IsActive())
+            ActiveCam = FollowCamera;
+        else if (PhotoCamera->IsActive())
+            ActiveCam = PhotoCamera;
+
+        if (ActiveCam)
+        {
+            float NewFOV = FMath::FInterpTo(
+                ActiveCam->FieldOfView,  // 現在のFOV
+                TargetFOV,               // 目標FOV
+                DeltaTime,               // 経過時間
+                FOVInterpSpeed           // 追従速度（調整可能）
+            );
+
+            ActiveCam->SetFieldOfView(NewFOV);
+        }
+    }
 }
