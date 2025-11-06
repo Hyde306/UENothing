@@ -285,49 +285,34 @@ void AMyCharacter::TakePhoto()
 
     bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
 
-    APhotoTarget* HitTarget = nullptr;
-    if (bHit)
-    {
-        HitTarget = Cast<APhotoTarget>(Hit.GetActor());
-    }
+    APhotoTarget* HitTarget = bHit ? Cast<APhotoTarget>(Hit.GetActor()) : nullptr;
 
-    // === スクリーンショット保存 ===
-    FString ScreenshotName = FString::Printf(TEXT("Photo_%s.png"),
-        *FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S")));
-    FString SavePath = FPaths::ProjectSavedDir() + "Screenshots/" + ScreenshotName;
-    FScreenshotRequest::RequestScreenshot(SavePath, false, false);
-    UE_LOG(LogTemp, Warning, TEXT("💾 スクリーンショット保存: %s"), *SavePath);
-
-    // === 撮影音とかここで ===
-    // UGameplayStatics::PlaySound2D(this, TakePhotoSound);
-
-    // === スポットスコア判定 ===
+    // === 撮影スコア判定用 ===
     bool bScored = false;
+    FLinearColor FlashColor = FLinearColor::Red; // デフォルト：赤（失敗）
+
     if (HitTarget)
     {
-        // 一度でも撮影したことを記録
         if (!HitTarget->bAlreadyCaptured)
         {
             HitTarget->bAlreadyCaptured = true;
             UE_LOG(LogTemp, Warning, TEXT("🎯 '%s' 撮影記録（初撮影）"), *HitTarget->TargetName);
         }
 
-        // すべてのスポットを走査
+        // 撮影スポットの検索
         TArray<AActor*> FoundSpots;
         UGameplayStatics::GetAllActorsOfClass(GetWorld(), APhotoSpot::StaticClass(), FoundSpots);
 
         for (AActor* Actor : FoundSpots)
         {
             APhotoSpot* Spot = Cast<APhotoSpot>(Actor);
-            if (Spot && Spot->CanTakePhoto())
+            if (Spot && Spot->CanTakePhoto() && Spot->LinkedTarget == HitTarget)
             {
-                if (Spot->LinkedTarget == HitTarget)
-                {
-                    UE_LOG(LogTemp, Warning, TEXT("💎 Spot '%s' で '%s' を撮影成功！ +%d点"),
-                        *Spot->GetSpotName(), *HitTarget->TargetName, Spot->GetScore());
-                    bScored = true;
-                    break;
-                }
+                UE_LOG(LogTemp, Warning, TEXT("💎 Spot '%s' で '%s' を撮影成功！ +%d点"),
+                    *Spot->GetSpotName(), *HitTarget->TargetName, Spot->GetScore());
+                bScored = true;
+                FlashColor = FLinearColor::White; // 成功時：白フラッシュ
+                break;
             }
         }
 
@@ -341,6 +326,34 @@ void AMyCharacter::TakePhoto()
         UE_LOG(LogTemp, Warning, TEXT("❌ 何もヒットしませんでした。"));
     }
 
+    // === スクリーンショット保存 ===
+    FString ScreenshotName = FString::Printf(TEXT("Photo_%s.png"),
+        *FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S")));
+    FString SavePath = FPaths::ProjectSavedDir() + "Screenshots/" + ScreenshotName;
+    FScreenshotRequest::RequestScreenshot(SavePath, false, false);
+    UE_LOG(LogTemp, Warning, TEXT("💾 スクリーンショット保存: %s"), *SavePath);
+
+    // === 撮影後のフラッシュを 0.3 秒遅らせて発動 ===
+    if (APlayerController* PC = Cast<APlayerController>(GetController()))
+    {
+        if (APlayerCameraManager* CamMgr = PC->PlayerCameraManager)
+        {
+            FTimerHandle FlashHandle;
+            GetWorldTimerManager().SetTimer(FlashHandle, [this, CamMgr, FlashColor]()
+                {
+                    CamMgr->StartCameraFade(0.f, 1.f, 0.15f, FlashColor, false, true);
+
+                    FTimerHandle FadeHandle;
+                    // ← thisをキャプチャしているのでGetWorld()が使える
+                    this->GetWorld()->GetTimerManager().SetTimer(FadeHandle, [CamMgr, FlashColor]()
+                        {
+                            CamMgr->StartCameraFade(1.f, 0.f, 0.8f, FlashColor, false, true);
+                        }, 0.3f, false);
+
+                }, 0.3f, false); // フラッシュ発動まで0.3秒遅延
+        }
+    }
+
     // === クールタイム ===
     FTimerHandle ResetHandle;
     GetWorldTimerManager().SetTimer(ResetHandle, [this]()
@@ -349,6 +362,8 @@ void AMyCharacter::TakePhoto()
             UE_LOG(LogTemp, Warning, TEXT("📸 撮影終了"));
         }, 1.0f, false);
 }
+
+
 
 void AMyCharacter::Tick(float DeltaTime)
 {
