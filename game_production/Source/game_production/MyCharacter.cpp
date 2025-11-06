@@ -276,8 +276,17 @@ void AMyCharacter::TakePhoto()
     bIsTakingPhoto = true;
     UE_LOG(LogTemp, Warning, TEXT("📸 撮影開始！"));
 
+    // === カメラのワールド位置・向きを取得 ===
+    // === カメラのワールド位置・向きを取得 ===
+    FVector CameraLocation = PhotoCamera->GetComponentLocation();
+    FRotator CameraRotation = PhotoCamera->GetComponentRotation();
+
+    UE_LOG(LogTemp, Warning, TEXT("📸 CameraPos: %s"), *CameraLocation.ToString());
+    UE_LOG(LogTemp, Warning, TEXT("📸 CameraRot: %s"), *CameraRotation.ToString());
+
+
     // === カメラ前方にレイを飛ばす ===
-    FVector Start = PhotoCamera->GetComponentLocation();
+    FVector Start = CameraLocation;
     FVector End = Start + (PhotoCamera->GetForwardVector() * 5000.0f);
 
     FHitResult Hit;
@@ -288,9 +297,9 @@ void AMyCharacter::TakePhoto()
 
     APhotoTarget* HitTarget = bHit ? Cast<APhotoTarget>(Hit.GetActor()) : nullptr;
 
-    // === 撮影スコア判定用 ===
+    // === スコア判定 ===
     bool bScored = false;
-    FLinearColor FlashColor = FLinearColor::Red; // デフォルト：赤（失敗）
+    FLinearColor FlashColor = FLinearColor::Red; // デフォルト：赤
 
     if (HitTarget)
     {
@@ -300,7 +309,7 @@ void AMyCharacter::TakePhoto()
             UE_LOG(LogTemp, Warning, TEXT("🎯 '%s' 撮影記録（初撮影）"), *HitTarget->TargetName);
         }
 
-        // 撮影スポットの検索
+        // すべての PhotoSpot を取得
         TArray<AActor*> FoundSpots;
         UGameplayStatics::GetAllActorsOfClass(GetWorld(), APhotoSpot::StaticClass(), FoundSpots);
 
@@ -309,11 +318,10 @@ void AMyCharacter::TakePhoto()
             APhotoSpot* Spot = Cast<APhotoSpot>(Actor);
             if (Spot && Spot->CanTakePhoto() && Spot->LinkedTarget == HitTarget)
             {
-                // ✅ ベスト構図との距離・角度からスコアを算出！
-                int32 Score = Spot->EvaluatePhoto(
-                    PhotoCamera->GetComponentLocation(),
-                    PhotoCamera->GetComponentRotation()
-                );
+                UE_LOG(LogTemp, Warning, TEXT("🎯 Spot '%s' BestLocation: %s"), *Spot->GetSpotName(), *Spot->BestLocation.ToString());
+
+                // ✅ ベスト構図との距離・角度からスコア算出
+                int32 Score = Spot->EvaluatePhoto(CameraLocation, CameraRotation);
 
                 UE_LOG(LogTemp, Warning, TEXT("💎 Spot '%s' で '%s' を撮影成功！ %d点"),
                     *Spot->GetSpotName(), *HitTarget->TargetName, Score);
@@ -334,7 +342,6 @@ void AMyCharacter::TakePhoto()
         UE_LOG(LogTemp, Warning, TEXT("❌ 何もヒットしませんでした。"));
     }
 
-
     // === スクリーンショット保存 ===
     FString ScreenshotName = FString::Printf(TEXT("Photo_%s.png"),
         *FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S")));
@@ -342,7 +349,7 @@ void AMyCharacter::TakePhoto()
     FScreenshotRequest::RequestScreenshot(SavePath, false, false);
     UE_LOG(LogTemp, Warning, TEXT("💾 スクリーンショット保存: %s"), *SavePath);
 
-    // === 撮影後のフラッシュを 0.3 秒遅らせて発動 ===
+    // === フラッシュ演出 ===
     if (APlayerController* PC = Cast<APlayerController>(GetController()))
     {
         if (APlayerCameraManager* CamMgr = PC->PlayerCameraManager)
@@ -353,13 +360,12 @@ void AMyCharacter::TakePhoto()
                     CamMgr->StartCameraFade(0.f, 1.f, 0.15f, FlashColor, false, true);
 
                     FTimerHandle FadeHandle;
-                    // ← thisをキャプチャしているのでGetWorld()が使える
                     this->GetWorld()->GetTimerManager().SetTimer(FadeHandle, [CamMgr, FlashColor]()
                         {
                             CamMgr->StartCameraFade(1.f, 0.f, 0.8f, FlashColor, false, true);
                         }, 0.3f, false);
 
-                }, 0.3f, false); // フラッシュ発動まで0.3秒遅延
+                }, 0.3f, false);
         }
     }
 
@@ -371,8 +377,6 @@ void AMyCharacter::TakePhoto()
             UE_LOG(LogTemp, Warning, TEXT("📸 撮影終了"));
         }, 1.0f, false);
 }
-
-
 
 void AMyCharacter::Tick(float DeltaTime)
 {
