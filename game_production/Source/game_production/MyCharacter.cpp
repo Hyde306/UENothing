@@ -101,6 +101,7 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
         if (IA_TakePhoto)
             EnhancedInput->BindAction(IA_TakePhoto, ETriggerEvent::Started, this, &AMyCharacter::TakePhoto);
+
     }
 }
 
@@ -308,8 +309,15 @@ void AMyCharacter::TakePhoto()
             APhotoSpot* Spot = Cast<APhotoSpot>(Actor);
             if (Spot && Spot->CanTakePhoto() && Spot->LinkedTarget == HitTarget)
             {
-                UE_LOG(LogTemp, Warning, TEXT("💎 Spot '%s' で '%s' を撮影成功！ +%d点"),
-                    *Spot->GetSpotName(), *HitTarget->TargetName, Spot->GetScore());
+                // ✅ ベスト構図との距離・角度からスコアを算出！
+                int32 Score = Spot->EvaluatePhoto(
+                    PhotoCamera->GetComponentLocation(),
+                    PhotoCamera->GetComponentRotation()
+                );
+
+                UE_LOG(LogTemp, Warning, TEXT("💎 Spot '%s' で '%s' を撮影成功！ %d点"),
+                    *Spot->GetSpotName(), *HitTarget->TargetName, Score);
+
                 bScored = true;
                 FlashColor = FLinearColor::White; // 成功時：白フラッシュ
                 break;
@@ -325,6 +333,7 @@ void AMyCharacter::TakePhoto()
     {
         UE_LOG(LogTemp, Warning, TEXT("❌ 何もヒットしませんでした。"));
     }
+
 
     // === スクリーンショット保存 ===
     FString ScreenshotName = FString::Printf(TEXT("Photo_%s.png"),

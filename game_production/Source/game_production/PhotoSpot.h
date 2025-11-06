@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "PhotoTarget.h" // ← generated.h より前に書く！
+#include "PhotoTarget.h"
 #include "PhotoSpot.generated.h"
 
 UCLASS()
@@ -16,26 +16,54 @@ public:
 protected:
     virtual void BeginPlay() override;
 
-    // 撮影判定範囲
+    /** 撮影判定範囲 */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PhotoSpot")
     class UBoxComponent* TriggerBox;
 
-public:
-    // このスポットで撮影できるターゲット
-    UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "PhotoSpot")
-    class APhotoTarget* LinkedTarget;
-
-    // スポット名やスコア
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
-    FString SpotName = "Unnamed Spot";
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
-    int32 ScoreValue = 100;
-
-protected:
+    /** 撮影中プレイヤーが範囲内にいるか */
     bool bPlayerInside = false;
 
 public:
+    /** このスポットで撮影できるターゲット */
+    UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "PhotoSpot")
+    class APhotoTarget* LinkedTarget;
+
+    /** スポット名 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
+    FString SpotName = TEXT("Unnamed Spot");
+
+    /** 満点スコア */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
+    int32 MaxScore = 100;
+
+    /** 理想のカメラ位置（ベスト構図） */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
+    FVector BestLocation;
+
+    /** 理想のカメラ角度 */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
+    FRotator BestRotation;
+
+    /** 許容距離（これ以上離れると距離スコア0） */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
+    float MaxDistanceTolerance = 400.f;
+
+    /** 許容角度（これ以上ズレると角度スコア0） */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
+    float MaxAngleTolerance = 45.f;
+
+public:
+    /** 撮影範囲内か？ */
+    bool CanTakePhoto() const { return bPlayerInside; }
+
+    /** スポット名取得 */
+    FString GetSpotName() const { return SpotName; }
+
+    /** 撮影評価関数：スコアを返す */
+    UFUNCTION(BlueprintCallable, Category = "PhotoSpot|Scoring")
+    int32 EvaluatePhoto(const FVector& CameraLocation, const FRotator& CameraRotation) const;
+
+protected:
     UFUNCTION()
     void OnPlayerEnter(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
         UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
@@ -44,8 +72,4 @@ public:
     UFUNCTION()
     void OnPlayerExit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
         UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-    bool CanTakePhoto() const { return bPlayerInside; }
-    int32 GetScore() const { return ScoreValue; }
-    FString GetSpotName() const { return SpotName; }
 };
