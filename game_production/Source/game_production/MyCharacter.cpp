@@ -223,9 +223,6 @@ void AMyCharacter::TogglePhotoMode()
             PC->SetViewTargetWithBlend(this, 0.3f);
             UE_LOG(LogTemp, Warning, TEXT("Photo Mode ON"));
 
-            // ★ FOVを狭くする
-            PhotoCamera->SetFieldOfView(PhotoModeFOV);
-
             PC->SetViewTargetWithBlend(this, 0.3f);
             UE_LOG(LogTemp, Warning, TEXT("Photo Mode ON"));
 
@@ -248,20 +245,21 @@ void AMyCharacter::TogglePhotoMode()
             // === フォトモード OFF ===
             PhotoCamera->SetActive(false);
             FollowCamera->SetActive(true);
-
-            // キャラクターのMeshを再表示
             GetMesh()->SetOwnerNoSee(false);
+
+            // ★ フォトモードFOVをリセット（次回ズーム演出を再度できるように）
+            PhotoCamera->SetFieldOfView(NormalFOV);
 
             PC->SetViewTargetWithBlend(this, 0.3f);
             UE_LOG(LogTemp, Warning, TEXT("Photo Mode OFF"));
 
-            // === UIを非表示にする ===
             if (CameraUIInstance)
             {
                 CameraUIInstance->SetVisibility(ESlateVisibility::Hidden);
                 UE_LOG(LogTemp, Warning, TEXT("Camera UI Hidden"));
             }
         }
+
 
     }
 }
@@ -275,12 +273,11 @@ void AMyCharacter::TakePhoto()
     if (bIsTakingPhoto) return;
 
     bIsTakingPhoto = true;
-    UE_LOG(LogTemp, Warning, TEXT("撮影開始！"));
+    UE_LOG(LogTemp, Warning, TEXT("📸 撮影開始！"));
 
-
-    // カメラ前方にレイを飛ばす
+    // === カメラ前方にレイを飛ばす ===
     FVector Start = PhotoCamera->GetComponentLocation();
-    FVector End = Start + (PhotoCamera->GetForwardVector() * 5000.0f); // 5m～50m程度まで届く距離
+    FVector End = Start + (PhotoCamera->GetForwardVector() * 5000.0f);
 
     FHitResult Hit;
     FCollisionQueryParams Params;
@@ -288,108 +285,93 @@ void AMyCharacter::TakePhoto()
 
     bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
 
+    APhotoTarget* HitTarget = nullptr;
     if (bHit)
     {
-        if (APhotoTarget* Target = Cast<APhotoTarget>(Hit.GetActor()))
-        {
-            if (!Target->bAlreadyCaptured)
-            {
-                Target->bAlreadyCaptured = true;
-                UE_LOG(LogTemp, Warning, TEXT("'%s' ターゲット撮影成功！"),
-                    *Target->TargetName, Target->ScoreValue);
-            }
-            else
-            {
-                UE_LOG(LogTemp, Warning, TEXT("'%s' はすでに撮影済み！"), *Target->TargetName);
-            }
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("撮影対象ではありません。"));
-        }
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("何もヒットしませんでした。"));
+        HitTarget = Cast<APhotoTarget>(Hit.GetActor());
     }
 
-    // スクリーンショット保存
+    // === スクリーンショット保存 ===
     FString ScreenshotName = FString::Printf(TEXT("Photo_%s.png"),
         *FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S")));
     FString SavePath = FPaths::ProjectSavedDir() + "Screenshots/" + ScreenshotName;
-
     FScreenshotRequest::RequestScreenshot(SavePath, false, false);
-    UE_LOG(LogTemp, Warning, TEXT("スクリーンショット保存: %s"), *SavePath);
+    UE_LOG(LogTemp, Warning, TEXT("💾 スクリーンショット保存: %s"), *SavePath);
 
-    // 撮影音などを追加したい場合
+    // === 撮影音とかここで ===
     // UGameplayStatics::PlaySound2D(this, TakePhotoSound);
 
-    // 撮影後1秒クールタイム
-    FTimerHandle ResetHandle;
-    GetWorldTimerManager().SetTimer(ResetHandle, [this]()
-        {
-            bIsTakingPhoto = false;
-            UE_LOG(LogTemp, Warning, TEXT("撮影終了！"));
-        }, 1.0f, false);
-
-    // ==== 撮影後にフォトスポットスコア判定 ====
-    TArray<AActor*> FoundSpots;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), APhotoSpot::StaticClass(), FoundSpots);
-
+    // === スポットスコア判定 ===
     bool bScored = false;
-
-    for (AActor* Actor : FoundSpots)
+    if (HitTarget)
     {
-        APhotoSpot* Spot = Cast<APhotoSpot>(Actor);
-        if (Spot && Spot->CanTakePhoto()) // プレイヤーがスポット内
+        // 一度でも撮影したことを記録
+        if (!HitTarget->bAlreadyCaptured)
         {
-            // Spotが対応するターゲットを持っていて、それが今回撮影されたターゲットと一致していればスコア加算
-            if (APhotoTarget* Target = Cast<APhotoTarget>(Hit.GetActor()))
+            HitTarget->bAlreadyCaptured = true;
+            UE_LOG(LogTemp, Warning, TEXT("🎯 '%s' 撮影記録（初撮影）"), *HitTarget->TargetName);
+        }
+
+        // すべてのスポットを走査
+        TArray<AActor*> FoundSpots;
+        UGameplayStatics::GetAllActorsOfClass(GetWorld(), APhotoSpot::StaticClass(), FoundSpots);
+
+        for (AActor* Actor : FoundSpots)
+        {
+            APhotoSpot* Spot = Cast<APhotoSpot>(Actor);
+            if (Spot && Spot->CanTakePhoto())
             {
-                if (Spot->LinkedTarget == Target)
+                if (Spot->LinkedTarget == HitTarget)
                 {
-                    UE_LOG(LogTemp, Warning, TEXT("Spot '%s' で '%s' を撮影成功！ +%d点"),
-                        *Spot->GetSpotName(), *Target->TargetName, Spot->GetScore());
+                    UE_LOG(LogTemp, Warning, TEXT("💎 Spot '%s' で '%s' を撮影成功！ +%d点"),
+                        *Spot->GetSpotName(), *HitTarget->TargetName, Spot->GetScore());
                     bScored = true;
                     break;
                 }
             }
         }
+
+        if (!bScored)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("⚠️ スポット外撮影（'%s'）: スコア無効"), *HitTarget->TargetName);
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("❌ 何もヒットしませんでした。"));
     }
 
-    if (!bScored)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("スポット外、または対応ターゲットでないためスコア無効"));
-    }
+    // === クールタイム ===
+    FTimerHandle ResetHandle;
+    GetWorldTimerManager().SetTimer(ResetHandle, [this]()
+        {
+            bIsTakingPhoto = false;
+            UE_LOG(LogTemp, Warning, TEXT("📸 撮影終了"));
+        }, 1.0f, false);
 }
 
 void AMyCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
-    // ★ FOV補間処理（ズーム演出）
+    // === 現在のターゲットFOV ===
     float TargetFOV = bIsInPhotoMode ? PhotoModeFOV : NormalFOV;
 
-    if (FollowCamera && PhotoCamera)
+    UCameraComponent* ActiveCam = nullptr;
+
+    if (FollowCamera && FollowCamera->IsActive())
+        ActiveCam = FollowCamera;
+    else if (PhotoCamera && PhotoCamera->IsActive())
+        ActiveCam = PhotoCamera;
+
+    if (ActiveCam)
     {
-        // 現在アクティブなカメラを探す
-        UCameraComponent* ActiveCam = nullptr;
-
-        if (FollowCamera->IsActive())
-            ActiveCam = FollowCamera;
-        else if (PhotoCamera->IsActive())
-            ActiveCam = PhotoCamera;
-
-        if (ActiveCam)
-        {
-            float NewFOV = FMath::FInterpTo(
-                ActiveCam->FieldOfView,  // 現在のFOV
-                TargetFOV,               // 目標FOV
-                DeltaTime,               // 経過時間
-                FOVInterpSpeed           // 追従速度（調整可能）
-            );
-
-            ActiveCam->SetFieldOfView(NewFOV);
-        }
+        float NewFOV = FMath::FInterpTo(
+            ActiveCam->FieldOfView,  // 現在のFOV
+            TargetFOV,               // 目標FOV
+            DeltaTime,               // 経過時間
+            5.0f                     // ← ここでズーム速度を調整
+        );
+        ActiveCam->SetFieldOfView(NewFOV);
     }
 }
