@@ -36,21 +36,20 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
     int32 MaxScore = 100;
 
-    /** 理想のカメラ位置（ベスト構図） */
+    /*
+    // 距離・角度評価用（今は未使用）
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
     FVector BestLocation;
 
-    /** 理想のカメラ角度 */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
     FRotator BestRotation;
 
-    /** 許容距離（これ以上離れると距離スコア0） */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
     float MaxDistanceTolerance = 400.f;
 
-    /** 許容角度（これ以上ズレると角度スコア0） */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
     float MaxAngleTolerance = 45.f;
+    */
 
 public:
     /** 撮影範囲内か？ */

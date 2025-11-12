@@ -318,8 +318,6 @@ void AMyCharacter::TakePhoto()
             APhotoSpot* Spot = Cast<APhotoSpot>(Actor);
             if (Spot && Spot->CanTakePhoto() && Spot->LinkedTarget == HitTarget)
             {
-                UE_LOG(LogTemp, Warning, TEXT("🎯 Spot '%s' BestLocation: %s"), *Spot->GetSpotName(), *Spot->BestLocation.ToString());
-
                 // ✅ ベスト構図との距離・角度からスコア算出
                 int32 Score = Spot->EvaluatePhoto(CameraLocation, CameraRotation);
 
