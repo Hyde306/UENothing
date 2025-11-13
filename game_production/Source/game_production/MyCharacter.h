@@ -62,6 +62,9 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
     class UCameraComponent* PhotoCamera;
 
+    UPROPERTY()
+    class APhotoCameraActor* PhotoCamActor;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
     TSubclassOf<UUserWidget> CameraUIClass;
 
@@ -76,9 +79,6 @@ protected:
 
     UUserWidget* CameraUIInstance;
     bool bIsCameraMode = false;
-
-    // ===== フォトモード用カメラ回転 =====
-    FRotator PhotoCameraRotation;
 
 public:
     // ===== キャラクター状態（ABPで参照可） =====
