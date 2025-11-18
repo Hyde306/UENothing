@@ -52,3 +52,18 @@ void APhotoCameraActor::AddLookInput(float YawInput, float PitchInput)
     CurrentRotation.Yaw += YawInput;
     CurrentRotation.Pitch = FMath::Clamp(CurrentRotation.Pitch + PitchInput, -80.f, 80.f);
 }
+
+FVector APhotoCameraActor::GetCameraLocation() const
+{
+    return PhotoCamera ? PhotoCamera->GetComponentLocation() : FVector::ZeroVector;
+}
+
+FRotator APhotoCameraActor::GetCameraRotation() const
+{
+    return PhotoCamera ? PhotoCamera->GetComponentRotation() : FRotator::ZeroRotator;
+}
+
+FVector APhotoCameraActor::GetCameraForward() const
+{
+    return PhotoCamera ? PhotoCamera->GetForwardVector() : FVector::ForwardVector;
+}

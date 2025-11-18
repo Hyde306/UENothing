@@ -301,3 +301,27 @@ void AMyCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 }
+
+void AMyCharacter::StartJump()
+{
+    bIsJumping = true;
+    Jump();
+}
+
+void AMyCharacter::StopJump()
+{
+    bIsJumping = false;
+    StopJumping();
+}
+
+void AMyCharacter::StartRun()
+{
+    bIsRunning = true;
+    GetCharacterMovement()->MaxWalkSpeed = 600.f;
+}
+
+void AMyCharacter::StopRun()
+{
+    bIsRunning = false;
+    GetCharacterMovement()->MaxWalkSpeed = 300.f;
+}
