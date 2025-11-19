@@ -11,7 +11,6 @@
 #include "HighResScreenshot.h"
 #include "PhotoSpot.h"
 #include "PhotoTarget.h"
-#include "PhotoCameraActor.h"
 
 // ===========================
 // コンストラクタ
@@ -57,22 +56,6 @@ void AMyCharacter::BeginPlay()
             if (IMC_Player)
                 Subsystem->AddMappingContext(IMC_Player, 0);
         }
-    }
-
-    // ★ PhotoCameraActor の生成
-    if (GetWorld())
-    {
-        FActorSpawnParameters Params;
-        Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-        PhotoCamActor = GetWorld()->SpawnActor<APhotoCameraActor>(
-            APhotoCameraActor::StaticClass(),
-            GetActorLocation(),
-            GetActorRotation(),
-            Params
-        );
-
-        PhotoCamActor->SetActorHiddenInGame(true);
     }
 }
 
@@ -146,13 +129,6 @@ void AMyCharacter::Look(const FInputActionValue& Value)
 {
     FVector2D Axis = Value.Get<FVector2D>();
 
-    // ★ フォトモードでは PhotoCamActor に回転入力
-    if (bIsInPhotoMode && PhotoCamActor)
-    {
-        PhotoCamActor->AddLookInput(Axis.X, Axis.Y);
-        return;
-    }
-
     // 通常は Controller を回す
     if (Controller)
     {
@@ -173,45 +149,38 @@ void AMyCharacter::TogglePhotoMode()
 {
     bIsInPhotoMode = !bIsInPhotoMode;
 
-    APlayerController* PC = Cast<APlayerController>(GetController());
-    if (!PC || !PhotoCamActor) return;
-
     if (bIsInPhotoMode)
     {
-        FollowCamera->SetActive(false);
+        // 一人称フォトモード
         GetMesh()->SetOwnerNoSee(true);
+        GetCharacterMovement()->DisableMovement();
 
-        // ★ 三人称カメラの位置と回転を取得
-        FVector CamPos = FollowCamera->GetComponentLocation();
-        FRotator CamRot = FollowCamera->GetComponentRotation();
-
-        PhotoCamActor->SetActorLocation(CamPos);
-        PhotoCamActor->SetCameraRotation(CamRot);
-        PhotoCamActor->SetActorHiddenInGame(false);
-
-        // ★ 視点を PhotoCameraActor に切り替え
-        PC->SetViewTargetWithBlend(PhotoCamActor, 0.3f);
+        SpringArm->TargetArmLength = 0.f;
+        SpringArm->bUsePawnControlRotation = true;
 
         if (CameraUIClass && !CameraUIInstance)
         {
             CameraUIInstance = CreateWidget<UUserWidget>(GetWorld(), CameraUIClass);
             if (CameraUIInstance) CameraUIInstance->AddToViewport();
         }
-        if (CameraUIInstance) CameraUIInstance->SetVisibility(ESlateVisibility::Visible);
+        if (CameraUIInstance)
+            CameraUIInstance->SetVisibility(ESlateVisibility::Visible);
 
-        UE_LOG(LogTemp, Warning, TEXT("Photo Mode ON"));
+        UE_LOG(LogTemp, Warning, TEXT("PhotoMode ON (1st Person)"));
     }
     else
     {
-        PhotoCamActor->SetActorHiddenInGame(true);
+        // 三人称へ戻る
         GetMesh()->SetOwnerNoSee(false);
+        GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 
-        // ★ 視点を元に戻す
-        PC->SetViewTargetWithBlend(this, 0.3f);
+        SpringArm->TargetArmLength = 300.f;
+        SpringArm->bUsePawnControlRotation = true;   // ★★ 必ず true
 
-        if (CameraUIInstance) CameraUIInstance->SetVisibility(ESlateVisibility::Hidden);
+        if (CameraUIInstance)
+            CameraUIInstance->SetVisibility(ESlateVisibility::Hidden);
 
-        UE_LOG(LogTemp, Warning, TEXT("Photo Mode OFF"));
+        UE_LOG(LogTemp, Warning, TEXT("PhotoMode OFF (3rd Person)"));
     }
 }
 
@@ -221,16 +190,14 @@ void AMyCharacter::TogglePhotoMode()
 void AMyCharacter::TakePhoto()
 {
     if (!bIsInPhotoMode) return;
-    if (!PhotoCamActor) return;
     if (bIsTakingPhoto) return;
 
     bIsTakingPhoto = true;
 
-    FVector CameraLocation = PhotoCamActor->GetCameraLocation();
-    FRotator CameraRotation = PhotoCamActor->GetCameraRotation();
-
+    FVector CameraLocation = FollowCamera->GetComponentLocation();
+    FRotator CameraRotation = FollowCamera->GetComponentRotation();
     FVector Start = CameraLocation;
-    FVector End = Start + PhotoCamActor->GetCameraForward() * 5000.0f;
+    FVector End = Start + FollowCamera->GetForwardVector() * 5000.f;
 
     FHitResult Hit;
     FCollisionQueryParams Params;

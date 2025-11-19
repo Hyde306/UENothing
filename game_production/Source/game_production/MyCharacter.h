@@ -26,8 +26,8 @@ protected:
     void StopJump();
     void StartRun();
     void StopRun();
-    void TogglePhotoMode();  // ← フォトモード切替
-    void TakePhoto();        // ← 撮影実行
+    void TogglePhotoMode();
+    void TakePhoto();
 
     // ===== Enhanced Input =====
     UPROPERTY(EditDefaultsOnly, Category = "Input")
@@ -58,30 +58,14 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
     class UCameraComponent* FollowCamera;
 
-    // フォトモード用（1人称カメラ）
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
-    class UCameraComponent* PhotoCamera;
-
-    UPROPERTY()
-    class APhotoCameraActor* PhotoCamActor;
-
+    // ===== UI =====
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
     TSubclassOf<UUserWidget> CameraUIClass;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
-    float NormalFOV = 90.f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
-    float PhotoModeFOV = 70.f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
-    float FOVInterpSpeed = 3.0f;
-
     UUserWidget* CameraUIInstance;
-    bool bIsCameraMode = false;
 
 public:
-    // ===== キャラクター状態（ABPで参照可） =====
+    // ===== 状態 =====
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bIsRunning = false;
 
