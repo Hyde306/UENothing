@@ -29,9 +29,6 @@ AMyCharacter::AMyCharacter()
     FollowCamera->SetupAttachment(SpringArm);
     FollowCamera->bUsePawnControlRotation = false;
 
-    // ★ もう PhotoCamera は使わないので消す
-    // PhotoCamera = ...
-
     bUseControllerRotationYaw = false;
     GetCharacterMovement()->bOrientRotationToMovement = false;
     GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
@@ -185,7 +182,7 @@ void AMyCharacter::TogglePhotoMode()
 }
 
 // ===========================
-// 撮影処理（PhotoCamActor を使うよう改修）
+// 撮影処理
 // ===========================
 void AMyCharacter::TakePhoto()
 {
@@ -262,7 +259,7 @@ void AMyCharacter::TakePhoto()
 }
 
 // ===========================
-// Tick（FOV は PhotoCameraActor に移行するので無効化）
+// Tick
 // ===========================
 void AMyCharacter::Tick(float DeltaTime)
 {
