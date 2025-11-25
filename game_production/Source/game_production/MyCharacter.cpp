@@ -130,7 +130,8 @@ void AMyCharacter::Look(const FInputActionValue& Value)
     if (Controller)
     {
         float NewPitch = Controller->GetControlRotation().Pitch + Axis.Y;
-        NewPitch = FMath::ClampAngle(NewPitch, -60.f, 60.f);
+        NewPitch = FMath::ClampAngle(NewPitch, -89.f, 89.f);
+
 
         float NewYaw = Controller->GetControlRotation().Yaw + Axis.X;
 

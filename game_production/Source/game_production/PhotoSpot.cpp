@@ -50,26 +50,25 @@ int32 APhotoSpot::EvaluatePhoto(const FVector& CameraLocation, const FRotator& C
         return 0;
     }
 
-    /*
-    // ↓ 距離・角度評価は今は使わないのでコメントアウト
-    const FVector WorldBestLocation = BestLocation;
-    const FRotator WorldBestRotation = BestRotation;
+    // ワールド座標に変換
+    const FVector WorldBestLocation = GetActorTransform().TransformPosition(BestLocation);
+    const FRotator WorldBestRotation = GetActorTransform().TransformRotation(BestRotation.Quaternion()).Rotator();
 
+    // 距離評価
     float Distance = FVector::Distance(CameraLocation, WorldBestLocation);
     float DistanceRate = FMath::Clamp(1.0f - (Distance / MaxDistanceTolerance), 0.0f, 1.0f);
 
+    // 角度評価（カメラ前方向と理想方向の差）
     FVector IdealForward = WorldBestRotation.Vector();
-    FVector ActualForward = -CameraRotation.Vector();
-
+    FVector ActualForward = CameraRotation.Vector(); // ← マイナスを外す
     float Dot = FVector::DotProduct(IdealForward.GetSafeNormal(), ActualForward.GetSafeNormal());
-    Dot = FMath::Clamp(Dot, -1.0f, 1.0f);
-    float AngleDiff = FMath::RadiansToDegrees(FMath::Acos(Dot));
+    float AngleDiff = FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(Dot, -1.0f, 1.0f)));
     float AngleRate = FMath::Clamp(1.0f - (AngleDiff / MaxAngleTolerance), 0.0f, 1.0f);
 
+    // 総合スコア
     float TotalRate = (AngleRate * 0.6f) + (DistanceRate * 0.4f);
     int32 FinalScore = FMath::RoundToInt(MaxScore * TotalRate);
-    */
 
-    UE_LOG(LogTemp, Warning, TEXT("📷 撮影成功! ターゲット '%s' を撮影しました"), *LinkedTarget->GetName());
-    return MaxScore;
+    UE_LOG(LogTemp, Warning, TEXT("📷 撮影成功! スコア: %d"), FinalScore);
+    return FinalScore;
 }
