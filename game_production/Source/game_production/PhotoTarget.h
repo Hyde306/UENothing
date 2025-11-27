@@ -19,4 +19,8 @@ public:
     int32 ScoreValue = 100;
 
     bool bAlreadyCaptured = false; // 撮影済みチェック
+
+    // 注視点（ターゲットのどの部分を中心に見るか）
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Photo")
+    FVector FocusOffset = FVector::ZeroVector;
 };

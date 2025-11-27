@@ -53,12 +53,16 @@ int32 APhotoSpot::EvaluatePhoto(const FVector& CameraLocation, const FRotator& C
     APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
     if (!PC) return 0;
 
+    // 注視点のワールド座標を取得
+    FVector FocusWorldLocation = LinkedTarget->GetActorTransform().TransformPosition(LinkedTarget->FocusOffset);
+
+    // スクリーン座標に変換
     FVector2D ScreenLocation;
-    bool bProjected = PC->ProjectWorldLocationToScreen(LinkedTarget->GetActorLocation(), ScreenLocation);
+    bool bProjected = PC->ProjectWorldLocationToScreen(FocusWorldLocation, ScreenLocation);
 
     if (!bProjected)
     {
-        UE_LOG(LogTemp, Warning, TEXT("📷 撮影失敗: ターゲットが画面外"));
+        UE_LOG(LogTemp, Warning, TEXT("📷 撮影失敗: 注視点が画面外"));
         return 0;
     }
 
