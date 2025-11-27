@@ -64,6 +64,13 @@ protected:
 
     UUserWidget* CameraUIInstance;
 
+    // B‰e‚Ì•¶š
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+    TSubclassOf<UUserWidget> PhotoResultWidgetClass;
+
+    UUserWidget* PhotoResultWidgetInstance;
+
+
 public:
     // ===== ó‘Ô =====
     UPROPERTY(BlueprintReadOnly, Category = "State")

@@ -11,6 +11,7 @@
 #include "HighResScreenshot.h"
 #include "PhotoSpot.h"
 #include "PhotoTarget.h"
+#include "PhotoResultWidget.h"
 
 // ===========================
 // コンストラクタ
@@ -216,18 +217,57 @@ void AMyCharacter::TakePhoto()
         TArray<AActor*> FoundSpots;
         UGameplayStatics::GetAllActorsOfClass(GetWorld(), APhotoSpot::StaticClass(), FoundSpots);
 
+
+        APhotoSpot* CapturedSpot = nullptr;
+        int32 Score = 0;
+
+
         for (AActor* Actor : FoundSpots)
         {
             APhotoSpot* Spot = Cast<APhotoSpot>(Actor);
             if (Spot && Spot->CanTakePhoto() && Spot->LinkedTarget == HitTarget)
             {
-                int32 Score = Spot->EvaluatePhoto(CameraLocation, CameraRotation);
+                Score = Spot->EvaluatePhoto(CameraLocation, CameraRotation);
+                CapturedSpot = Spot;
 
                 bScored = true;
                 FlashColor = FLinearColor::White;
                 break;
             }
         }
+
+        if (bScored && CapturedSpot)
+        {
+            if (PhotoResultWidgetClass)
+            {
+                UE_LOG(LogTemp, Warning, TEXT("PhotoResultWidgetClass は設定されています"));
+
+                UPhotoResultWidget* Widget = CreateWidget<UPhotoResultWidget>(GetWorld(), PhotoResultWidgetClass);
+                if (Widget)
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("ウィジェット作成成功"));
+                    Widget->AddToViewport();
+                    Widget->SetResultText(FString::Printf(TEXT("%sのフォトスポット撮影成功！\n\n                   スコア: %d"), *CapturedSpot->SpotName, Score));
+
+                    // 2秒後にフェードアウト開始
+                    FTimerHandle FadeHandle;
+                    GetWorldTimerManager().SetTimer(FadeHandle, [Widget]()
+                        {
+                            Widget->PlayFadeOut();
+                        }, 2.0f, false);
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Error, TEXT("ウィジェット作成に失敗しました"));
+                }
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("PhotoResultWidgetClass が設定されていません"));
+            }
+        }
+
+
     }
 
     // スクリーンショット
