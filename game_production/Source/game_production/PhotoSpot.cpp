@@ -42,6 +42,11 @@ void APhotoSpot::OnPlayerExit(UPrimitiveComponent* OverlappedComp, AActor* Other
     }
 }
 
+bool APhotoSpot::IsValidPhoto() const
+{
+    return bPlayerInside && LinkedTarget != nullptr;
+}
+
 int32 APhotoSpot::EvaluatePhoto(const FVector& CameraLocation, const FRotator& CameraRotation) const
 {
     if (!bPlayerInside || !LinkedTarget)

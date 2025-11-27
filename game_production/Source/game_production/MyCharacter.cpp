@@ -218,49 +218,57 @@ void AMyCharacter::TakePhoto()
 
     if (HitTarget)
     {
-        bool bWasAlreadyCaptured = HitTarget->bAlreadyCaptured;
-
-        if (!bWasAlreadyCaptured)
-            HitTarget->bAlreadyCaptured = true;
-
         FString ResultMessage;
         int32 Score = 0;
 
-        if (bWasAlreadyCaptured)
-        {
-            // 撮影済みメッセージ
-            ResultMessage = TEXT("このターゲットはすでに撮影済みです");
-            FlashColor = FLinearColor(0.5f, 0.5f, 0.5f); // グレーっぽい色にしてもOK
-        }
-        else
-        {
-            TArray<AActor*> FoundSpots;
-            UGameplayStatics::GetAllActorsOfClass(GetWorld(), APhotoSpot::StaticClass(), FoundSpots);
+        TArray<AActor*> FoundSpots;
+        UGameplayStatics::GetAllActorsOfClass(GetWorld(), APhotoSpot::StaticClass(), FoundSpots);
 
-            APhotoSpot* CapturedSpot = nullptr;
+        APhotoSpot* CapturedSpot = nullptr;
 
-            for (AActor* Actor : FoundSpots)
+        for (AActor* Actor : FoundSpots)
+        {
+            APhotoSpot* Spot = Cast<APhotoSpot>(Actor);
+            if (Spot && Spot->LinkedTarget == HitTarget)
             {
-                APhotoSpot* Spot = Cast<APhotoSpot>(Actor);
-                if (Spot && Spot->CanTakePhoto() && Spot->LinkedTarget == HitTarget)
+                Score = Spot->EvaluatePhoto(CameraLocation, CameraRotation);
+                CapturedSpot = Spot;
+
+                if (Spot->IsValidPhoto())
                 {
-                    Score = Spot->EvaluatePhoto(CameraLocation, CameraRotation);
-                    CapturedSpot = Spot;
+                    if (!HitTarget->bAlreadyCaptured)
+                    {
+                        HitTarget->bAlreadyCaptured = true;
+                        FlashColor = FLinearColor::White;
 
-                    bScored = true;
-                    FlashColor = FLinearColor::White;
-                    break;
+                        ResultMessage = FString::Printf(TEXT("%sのフォトスポット撮影成功！\n\n                   スコア: %d"), *Spot->SpotName, Score);
+                    }
+                    else
+                    {
+                        // ✅ すでに撮影済みだけど条件は満たしている
+                        FlashColor = FLinearColor(1.f, 0.f, 0.f); // 赤フラッシュ
+                        ResultMessage = FString::Printf(TEXT("%sはすでに撮影済みです"), *Spot->SpotName);
+                    }
+
+                    bScored = true; // UIは出す（スコアUIかどうかはメッセージで分ける）
                 }
+                else
+                {
+                    ResultMessage = TEXT("撮影ターゲットですが、スコア対象ではありません");
+                    FlashColor = FLinearColor(1.f, 0.f, 0.f); // 🔴 赤フラッシュに変更！
+                    bScored = true;
+                }
+
+
+                break;
             }
 
-            if (bScored && CapturedSpot)
-            {
-                ResultMessage = FString::Printf(TEXT("%sのフォトスポット撮影成功！\n\n                   スコア: %d"), *CapturedSpot->SpotName, Score);
-            }
-            else
-            {
-                ResultMessage = TEXT("撮影は成功しましたが、スコア対象ではありません");
-            }
+        }
+
+        if (!CapturedSpot)
+        {
+            ResultMessage = TEXT("撮影は成功しましたが、スコア対象ではありません");
+            FlashColor = FLinearColor(0.5f, 0.5f, 0.5f);
         }
 
         // ウィジェット表示（共通処理）
@@ -281,6 +289,7 @@ void AMyCharacter::TakePhoto()
             }
         }
     }
+
 
 
     // スクリーンショット

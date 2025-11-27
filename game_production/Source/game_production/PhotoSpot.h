@@ -61,6 +61,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "PhotoSpot|Scoring")
     int32 EvaluatePhoto(const FVector& CameraLocation, const FRotator& CameraRotation) const;
 
+    /** 撮影条件を満たしているか？（スポット内＆ターゲットあり） */
+    UFUNCTION(BlueprintCallable, Category = "PhotoSpot|Scoring")
+    bool IsValidPhoto() const;
+
 protected:
     UFUNCTION()
     void OnPlayerEnter(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
@@ -70,4 +74,5 @@ protected:
     UFUNCTION()
     void OnPlayerExit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
         UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
 };
