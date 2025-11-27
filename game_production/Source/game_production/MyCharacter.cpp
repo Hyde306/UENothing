@@ -157,6 +157,8 @@ void AMyCharacter::TogglePhotoMode()
         SpringArm->TargetArmLength = 0.f;
         SpringArm->bUsePawnControlRotation = true;
 
+        FollowCamera->SetRelativeLocation(FVector(0.f, 0.f, 60.f));
+
         if (CameraUIClass && !CameraUIInstance)
         {
             CameraUIInstance = CreateWidget<UUserWidget>(GetWorld(), CameraUIClass);
@@ -175,6 +177,8 @@ void AMyCharacter::TogglePhotoMode()
 
         SpringArm->TargetArmLength = 300.f;
         SpringArm->bUsePawnControlRotation = true;   // ★★ 必ず true
+
+        FollowCamera->SetRelativeLocation(FVector::ZeroVector);
 
         if (CameraUIInstance)
             CameraUIInstance->SetVisibility(ESlateVisibility::Hidden);
