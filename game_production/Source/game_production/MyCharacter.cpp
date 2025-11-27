@@ -156,8 +156,9 @@ void AMyCharacter::TogglePhotoMode()
 
         SpringArm->TargetArmLength = 0.f;
         SpringArm->bUsePawnControlRotation = true;
-
         FollowCamera->SetRelativeLocation(FVector(0.f, 0.f, 60.f));
+
+        TargetFOV = PhotoFOV; // ← ズームイン開始！
 
         if (CameraUIClass && !CameraUIInstance)
         {
@@ -176,9 +177,10 @@ void AMyCharacter::TogglePhotoMode()
         GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 
         SpringArm->TargetArmLength = 300.f;
-        SpringArm->bUsePawnControlRotation = true;   // ★★ 必ず true
-
+        SpringArm->bUsePawnControlRotation = true;
         FollowCamera->SetRelativeLocation(FVector::ZeroVector);
+
+        TargetFOV = DefaultFOV; // ← ズームアウト開始！
 
         if (CameraUIInstance)
             CameraUIInstance->SetVisibility(ESlateVisibility::Hidden);
@@ -186,6 +188,7 @@ void AMyCharacter::TogglePhotoMode()
         UE_LOG(LogTemp, Warning, TEXT("PhotoMode OFF (3rd Person)"));
     }
 }
+
 
 // ===========================
 // 撮影処理
@@ -215,64 +218,70 @@ void AMyCharacter::TakePhoto()
 
     if (HitTarget)
     {
-        if (!HitTarget->bAlreadyCaptured)
+        bool bWasAlreadyCaptured = HitTarget->bAlreadyCaptured;
+
+        if (!bWasAlreadyCaptured)
             HitTarget->bAlreadyCaptured = true;
 
-        TArray<AActor*> FoundSpots;
-        UGameplayStatics::GetAllActorsOfClass(GetWorld(), APhotoSpot::StaticClass(), FoundSpots);
-
-
-        APhotoSpot* CapturedSpot = nullptr;
+        FString ResultMessage;
         int32 Score = 0;
 
-
-        for (AActor* Actor : FoundSpots)
+        if (bWasAlreadyCaptured)
         {
-            APhotoSpot* Spot = Cast<APhotoSpot>(Actor);
-            if (Spot && Spot->CanTakePhoto() && Spot->LinkedTarget == HitTarget)
-            {
-                Score = Spot->EvaluatePhoto(CameraLocation, CameraRotation);
-                CapturedSpot = Spot;
-
-                bScored = true;
-                FlashColor = FLinearColor::White;
-                break;
-            }
+            // 撮影済みメッセージ
+            ResultMessage = TEXT("このターゲットはすでに撮影済みです");
+            FlashColor = FLinearColor(0.5f, 0.5f, 0.5f); // グレーっぽい色にしてもOK
         }
-
-        if (bScored && CapturedSpot)
+        else
         {
-            if (PhotoResultWidgetClass)
+            TArray<AActor*> FoundSpots;
+            UGameplayStatics::GetAllActorsOfClass(GetWorld(), APhotoSpot::StaticClass(), FoundSpots);
+
+            APhotoSpot* CapturedSpot = nullptr;
+
+            for (AActor* Actor : FoundSpots)
             {
-                UE_LOG(LogTemp, Warning, TEXT("PhotoResultWidgetClass は設定されています"));
-
-                UPhotoResultWidget* Widget = CreateWidget<UPhotoResultWidget>(GetWorld(), PhotoResultWidgetClass);
-                if (Widget)
+                APhotoSpot* Spot = Cast<APhotoSpot>(Actor);
+                if (Spot && Spot->CanTakePhoto() && Spot->LinkedTarget == HitTarget)
                 {
-                    UE_LOG(LogTemp, Warning, TEXT("ウィジェット作成成功"));
-                    Widget->AddToViewport();
-                    Widget->SetResultText(FString::Printf(TEXT("%sのフォトスポット撮影成功！\n\n                   スコア: %d"), *CapturedSpot->SpotName, Score));
+                    Score = Spot->EvaluatePhoto(CameraLocation, CameraRotation);
+                    CapturedSpot = Spot;
 
-                    // 2秒後にフェードアウト開始
-                    FTimerHandle FadeHandle;
-                    GetWorldTimerManager().SetTimer(FadeHandle, [Widget]()
-                        {
-                            Widget->PlayFadeOut();
-                        }, 2.0f, false);
+                    bScored = true;
+                    FlashColor = FLinearColor::White;
+                    break;
                 }
-                else
-                {
-                    UE_LOG(LogTemp, Error, TEXT("ウィジェット作成に失敗しました"));
-                }
+            }
+
+            if (bScored && CapturedSpot)
+            {
+                ResultMessage = FString::Printf(TEXT("%sのフォトスポット撮影成功！\n\n                   スコア: %d"), *CapturedSpot->SpotName, Score);
             }
             else
             {
-                UE_LOG(LogTemp, Error, TEXT("PhotoResultWidgetClass が設定されていません"));
+                ResultMessage = TEXT("撮影は成功しましたが、スコア対象ではありません");
             }
         }
 
+        // ウィジェット表示（共通処理）
+        if (PhotoResultWidgetClass)
+        {
+            UPhotoResultWidget* Widget = CreateWidget<UPhotoResultWidget>(GetWorld(), PhotoResultWidgetClass);
+            if (Widget)
+            {
+                Widget->AddToViewport();
+                Widget->SetVisibility(ESlateVisibility::Visible);
+                Widget->SetResultText(ResultMessage);
 
+                FTimerHandle FadeHandle;
+                GetWorldTimerManager().SetTimer(FadeHandle, [Widget]()
+                    {
+                        Widget->PlayFadeOut();
+                    }, 2.0f, false);
+            }
+        }
     }
+
 
     // スクリーンショット
     FString ScreenshotName = FString::Printf(TEXT("Photo_%s.png"),
@@ -309,7 +318,12 @@ void AMyCharacter::TakePhoto()
 void AMyCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+
+    float CurrentFOV = FollowCamera->FieldOfView;
+    float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, ZoomInterpSpeed);
+    FollowCamera->SetFieldOfView(NewFOV);
 }
+
 
 void AMyCharacter::StartJump()
 {

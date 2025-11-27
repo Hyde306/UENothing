@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "PhotoTarget.h"
+#include "Kismet/GameplayStatics.h"
 #include "PhotoSpot.generated.h"
 
 UCLASS()

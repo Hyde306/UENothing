@@ -29,6 +29,11 @@ protected:
     void TogglePhotoMode();
     void TakePhoto();
 
+    float DefaultFOV = 90.f;
+    float PhotoFOV = 45.f;
+    float ZoomInterpSpeed = 8.f;
+    float TargetFOV = 90.f; // Å© TickÇ≈ï‚ä‘Ç∑ÇÈñ⁄ïWíl
+
     // ===== Enhanced Input =====
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     class UInputMappingContext* IMC_Player;

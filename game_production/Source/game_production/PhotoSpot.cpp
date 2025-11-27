@@ -50,25 +50,28 @@ int32 APhotoSpot::EvaluatePhoto(const FVector& CameraLocation, const FRotator& C
         return 0;
     }
 
-    // ワールド座標に変換
-    const FVector WorldBestLocation = GetActorTransform().TransformPosition(BestLocation);
-    const FRotator WorldBestRotation = GetActorTransform().TransformRotation(BestRotation.Quaternion()).Rotator();
+    APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+    if (!PC) return 0;
 
-    // 距離評価
-    float Distance = FVector::Distance(CameraLocation, WorldBestLocation);
-    float DistanceRate = FMath::Clamp(1.0f - (Distance / MaxDistanceTolerance), 0.0f, 1.0f);
+    FVector2D ScreenLocation;
+    bool bProjected = PC->ProjectWorldLocationToScreen(LinkedTarget->GetActorLocation(), ScreenLocation);
 
-    // 角度評価（カメラ前方向と理想方向の差）
-    FVector IdealForward = WorldBestRotation.Vector();
-    FVector ActualForward = CameraRotation.Vector(); // ← マイナスを外す
-    float Dot = FVector::DotProduct(IdealForward.GetSafeNormal(), ActualForward.GetSafeNormal());
-    float AngleDiff = FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(Dot, -1.0f, 1.0f)));
-    float AngleRate = FMath::Clamp(1.0f - (AngleDiff / MaxAngleTolerance), 0.0f, 1.0f);
+    if (!bProjected)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("📷 撮影失敗: ターゲットが画面外"));
+        return 0;
+    }
 
-    // 総合スコア
-    float TotalRate = (AngleRate * 0.6f) + (DistanceRate * 0.4f);
-    int32 FinalScore = FMath::RoundToInt(MaxScore * TotalRate);
+    int32 ScreenX, ScreenY;
+    PC->GetViewportSize(ScreenX, ScreenY);
+    FVector2D ScreenCenter(ScreenX / 2.0f, ScreenY / 2.0f);
 
-    UE_LOG(LogTemp, Warning, TEXT("📷 撮影成功! スコア: %d"), FinalScore);
+    float DistanceFromCenter = FVector2D::Distance(ScreenLocation, ScreenCenter);
+    float MaxScreenDistance = FVector2D(ScreenX, ScreenY).Size() / 2.0f;
+
+    float CenterRate = FMath::Clamp(1.0f - (DistanceFromCenter / MaxScreenDistance), 0.0f, 1.0f);
+    int32 FinalScore = FMath::RoundToInt(MaxScore * CenterRate);
+
+    UE_LOG(LogTemp, Warning, TEXT("📷 撮影成功! スコア: %d (中心率: %.2f)"), FinalScore, CenterRate);
     return FinalScore;
 }
