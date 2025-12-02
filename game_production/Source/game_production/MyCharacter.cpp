@@ -245,7 +245,7 @@ void AMyCharacter::TakePhoto()
                     }
                     else
                     {
-                        // ✅ すでに撮影済みだけど条件は満たしている
+                        //  すでに撮影済みだけど条件は満たしている
                         FlashColor = FLinearColor(1.f, 0.f, 0.f); // 赤フラッシュ
                         ResultMessage = FString::Printf(TEXT("%sはすでに撮影済みです"), *Spot->SpotName);
                     }
