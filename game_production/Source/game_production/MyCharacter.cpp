@@ -255,7 +255,7 @@ void AMyCharacter::TakePhoto()
                 else
                 {
                     ResultMessage = TEXT("撮影ターゲットですが、スコア対象ではありません");
-                    FlashColor = FLinearColor(1.f, 0.f, 0.f); // 🔴 赤フラッシュに変更！
+                    FlashColor = FLinearColor(1.f, 0.f, 0.f); //  赤フラッシュに変更！
                     bScored = true;
                 }
 
