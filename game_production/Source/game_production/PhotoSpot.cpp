@@ -4,11 +4,14 @@
 #include "MyCharacter.h"
 
 APhotoSpot::APhotoSpot()
+    : BestLocation(FVector::ZeroVector)
+    , BestRotation(FRotator::ZeroRotator)
 {
     PrimaryActorTick.bCanEverTick = false;
 
     TriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerBox"));
     RootComponent = TriggerBox;
+
     TriggerBox->InitBoxExtent(FVector(200.f, 200.f, 100.f));
     TriggerBox->SetCollisionProfileName(TEXT("Trigger"));
 }
@@ -42,45 +45,25 @@ void APhotoSpot::OnPlayerExit(UPrimitiveComponent* OverlappedComp, AActor* Other
     }
 }
 
-bool APhotoSpot::IsValidPhoto() const
-{
-    return bPlayerInside && LinkedTarget != nullptr;
-}
-
 int32 APhotoSpot::EvaluatePhoto(const FVector& CameraLocation, const FRotator& CameraRotation) const
 {
-    if (!bPlayerInside || !LinkedTarget)
+    if (!bPlayerInside)
     {
-        UE_LOG(LogTemp, Warning, TEXT("📷 撮影失敗: スポット外またはターゲット未設定"));
+        UE_LOG(LogTemp, Warning, TEXT("📷 撮影失敗: スポット外"));
         return 0;
     }
 
-    APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-    if (!PC) return 0;
+    float Distance = FVector::Dist(CameraLocation, BestLocation);
+    float DistanceRate = 1.0f - FMath::Clamp(Distance / MaxDistanceTolerance, 0.0f, 1.0f);
 
-    // 注視点のワールド座標を取得
-    FVector FocusWorldLocation = LinkedTarget->GetActorTransform().TransformPosition(LinkedTarget->FocusOffset);
+    float AngleDiff = FMath::Abs((CameraRotation - BestRotation).Yaw);
+    float AngleRate = 1.0f - FMath::Clamp(AngleDiff / MaxAngleTolerance, 0.0f, 1.0f);
 
-    // スクリーン座標に変換
-    FVector2D ScreenLocation;
-    bool bProjected = PC->ProjectWorldLocationToScreen(FocusWorldLocation, ScreenLocation);
+    float FinalRate = (DistanceRate + AngleRate) * 0.5f;
+    int32 FinalScore = FMath::RoundToInt(MaxScore * FinalRate);
 
-    if (!bProjected)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("📷 撮影失敗: 注視点が画面外"));
-        return 0;
-    }
+    UE_LOG(LogTemp, Warning, TEXT("📷 撮影成功! スコア: %d (距離率: %.2f, 角度率: %.2f)"),
+        FinalScore, DistanceRate, AngleRate);
 
-    int32 ScreenX, ScreenY;
-    PC->GetViewportSize(ScreenX, ScreenY);
-    FVector2D ScreenCenter(ScreenX / 2.0f, ScreenY / 2.0f);
-
-    float DistanceFromCenter = FVector2D::Distance(ScreenLocation, ScreenCenter);
-    float MaxScreenDistance = FVector2D(ScreenX, ScreenY).Size() / 2.0f;
-
-    float CenterRate = FMath::Clamp(1.0f - (DistanceFromCenter / MaxScreenDistance), 0.0f, 1.0f);
-    int32 FinalScore = FMath::RoundToInt(MaxScore * CenterRate);
-
-    UE_LOG(LogTemp, Warning, TEXT("📷 撮影成功! スコア: %d (中心率: %.2f)"), FinalScore, CenterRate);
     return FinalScore;
 }

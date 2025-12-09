@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "PhotoTarget.h"
 #include "Kismet/GameplayStatics.h"
 #include "PhotoSpot.generated.h"
 
@@ -25,10 +24,6 @@ protected:
     bool bPlayerInside = false;
 
 public:
-    /** このスポットで撮影できるターゲット */
-    UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "PhotoSpot")
-    class APhotoTarget* LinkedTarget;
-
     /** スポット名 */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
     FString SpotName = TEXT("Unnamed Spot");
@@ -37,12 +32,12 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
     int32 MaxScore = 100;
 
-    /** 距離・角度評価用 */
+    /** 撮影評価用：理想位置と角度 */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
-    FVector BestLocation;
+    FVector BestLocation = FVector::ZeroVector;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
-    FRotator BestRotation;
+    FRotator BestRotation = FRotator::ZeroRotator;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
     float MaxDistanceTolerance = 400.f;
@@ -61,9 +56,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "PhotoSpot|Scoring")
     int32 EvaluatePhoto(const FVector& CameraLocation, const FRotator& CameraRotation) const;
 
-    /** 撮影条件を満たしているか？（スポット内＆ターゲットあり） */
+    /** 撮影条件を満たしているか？（スポット内のみ） */
     UFUNCTION(BlueprintCallable, Category = "PhotoSpot|Scoring")
-    bool IsValidPhoto() const;
+    bool IsValidPhoto() const { return bPlayerInside; }
 
 protected:
     UFUNCTION()
@@ -74,5 +69,4 @@ protected:
     UFUNCTION()
     void OnPlayerExit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
         UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
 };
