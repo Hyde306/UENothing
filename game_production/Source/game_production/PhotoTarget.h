@@ -12,6 +12,8 @@ class GAME_PRODUCTION_API APhotoTarget : public AActor
 public:
     APhotoTarget();
 
+    virtual void Tick(float DeltaTime) override;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Photo")
     FString TargetName = "Unnamed Target";
 
@@ -23,4 +25,16 @@ public:
     // 注視点（ターゲットのどの部分を中心に見るか）
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Photo")
     FVector FocusOffset = FVector::ZeroVector;
+
+    UPROPERTY(EditAnywhere, Category = "Photo Movement")
+    float FloatAmplitude = 50.f; // 上下の振幅
+
+    UPROPERTY(EditAnywhere, Category = "Photo Movement")
+    float FloatSpeed = 2.f; // 周期の速さ
+
+    float RunningTime = 0.f;
+
+    UPROPERTY(EditAnywhere, Category = "Photo Movement")
+    bool bEnableFloating = false; // ← 動かすかどうか
+
 };
