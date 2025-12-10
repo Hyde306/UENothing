@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Kismet/GameplayStatics.h"
 #include "PhotoSpot.generated.h"
 
 UCLASS()
@@ -16,13 +15,6 @@ public:
 protected:
     virtual void BeginPlay() override;
 
-    /** 撮影判定範囲 */
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PhotoSpot")
-    class UBoxComponent* TriggerBox;
-
-    /** 撮影中プレイヤーが範囲内にいるか */
-    bool bPlayerInside = false;
-
 public:
     /** スポット名 */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
@@ -32,41 +24,23 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
     int32 MaxScore = 100;
 
-    /** 撮影評価用：理想位置と角度 */
+    /** 撮影可能距離の上限 */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
-    FVector BestLocation = FVector::ZeroVector;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
-    FRotator BestRotation = FRotator::ZeroRotator;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
-    float MaxDistanceTolerance = 400.f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
-    float MaxAngleTolerance = 45.f;
-
-public:
-    /** 撮影範囲内か？ */
-    bool CanTakePhoto() const { return bPlayerInside; }
-
-    /** スポット名取得 */
-    FString GetSpotName() const { return SpotName; }
+    float MaxDistanceTolerance = 1000.f;
 
     /** 撮影評価関数：スコアを返す */
     UFUNCTION(BlueprintCallable, Category = "PhotoSpot|Scoring")
-    int32 EvaluatePhoto(const FVector& CameraLocation, const FRotator& CameraRotation) const;
+    int32 EvaluatePhoto(const FVector& CameraLocation); 
 
-    /** 撮影条件を満たしているか？（スポット内のみ） */
-    UFUNCTION(BlueprintCallable, Category = "PhotoSpot|Scoring")
-    bool IsValidPhoto() const { return bPlayerInside; }
+    UFUNCTION(BlueprintCallable, Category = "PhotoSpot")
+    FString GetSpotName() const { return SpotName; }
 
-protected:
-    UFUNCTION()
-    void OnPlayerEnter(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-        UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-        bool bFromSweep, const FHitResult& SweepResult);
+    // 撮影成功回数
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PhotoSpot|Scoring")
+    int32 SuccessfulCaptureCount = 0;
 
-    UFUNCTION()
-    void OnPlayerExit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-        UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+    // 撮影可能回数の上限
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
+    int32 MaxCaptureCount = 3;
+
 };

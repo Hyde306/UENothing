@@ -197,11 +197,10 @@ void AMyCharacter::TakePhoto()
     bIsTakingPhoto = true;
 
     FVector CameraLocation = FollowCamera->GetComponentLocation();
-    FRotator CameraRotation = FollowCamera->GetComponentRotation();
 
-    FString ResultMessage;
-    FLinearColor FlashColor = FLinearColor::Red;
     bool bScored = false;
+    FLinearColor FlashColor = FLinearColor::Red;
+    FString ResultMessage;
 
     // すべての PhotoSpot を探索
     TArray<AActor*> FoundSpots;
@@ -210,70 +209,96 @@ void AMyCharacter::TakePhoto()
     for (AActor* Actor : FoundSpots)
     {
         APhotoSpot* Spot = Cast<APhotoSpot>(Actor);
-        if (Spot && Spot->IsValidPhoto()) // ← プレイヤーが範囲内かどうか
+        if (!Spot) continue;
+
+        int32 Score = Spot->EvaluatePhoto(CameraLocation);
+
+        if (Score > 0)
         {
-            int32 Score = Spot->EvaluatePhoto(CameraLocation, CameraRotation);
-
-            if (Score > 0)
-            {
-                FlashColor = FLinearColor::White;
-                ResultMessage = FString::Printf(TEXT("%s 撮影成功！ スコア: %d"), *Spot->GetSpotName(), Score);
-            }
-            else
-            {
-                FlashColor = FLinearColor(1.f, 0.f, 0.f);
-                ResultMessage = FString::Printf(TEXT("%s 撮影失敗 (条件不一致)"), *Spot->GetSpotName());
-            }
-
+            FlashColor = FLinearColor::White;
+            ResultMessage = FString::Printf(TEXT("%s 撮影成功！ スコア: %d"),
+                *Spot->GetSpotName(), Score);
             bScored = true;
-            break; // 最初に一致したスポットで判定
+        }
+        else
+        {
+            FlashColor = FLinearColor::Red;
+            ResultMessage = FString::Printf(TEXT("%s 撮影失敗 (条件不一致)"),
+                *Spot->GetSpotName());
+        }
+
+        // 撮影結果UI表示（スポットごと）
+        if (PhotoResultWidgetClass)
+        {
+            UPhotoResultWidget* Widget = CreateWidget<UPhotoResultWidget>(GetWorld(), PhotoResultWidgetClass);
+            if (Widget)
+            {
+                Widget->AddToViewport();
+                Widget->SetVisibility(ESlateVisibility::Visible);
+                Widget->SetResultText(ResultMessage);
+
+                FTimerHandle FadeHandle;
+                GetWorldTimerManager().SetTimer(FadeHandle, [Widget]()
+                    {
+                        Widget->PlayFadeOut();
+                    }, 2.0f, false);
+            }
         }
     }
 
-    if (!bScored)
+    // スポットが1つもなかった場合のみメッセージを出す
+    if (!bScored && FoundSpots.Num() == 0)
     {
         ResultMessage = TEXT("撮影は成功しましたが\nスコア対象ではありません");
         FlashColor = FLinearColor(0.5f, 0.5f, 0.5f);
-    }
 
-    // 撮影結果UI表示
-    if (PhotoResultWidgetClass)
-    {
-        UPhotoResultWidget* Widget = CreateWidget<UPhotoResultWidget>(GetWorld(), PhotoResultWidgetClass);
-        if (Widget)
+        if (PhotoResultWidgetClass)
         {
-            Widget->AddToViewport();
-            Widget->SetVisibility(ESlateVisibility::Visible);
-            Widget->SetResultText(ResultMessage);
+            UPhotoResultWidget* Widget = CreateWidget<UPhotoResultWidget>(GetWorld(), PhotoResultWidgetClass);
+            if (Widget)
+            {
+                Widget->AddToViewport();
+                Widget->SetVisibility(ESlateVisibility::Visible);
+                Widget->SetResultText(ResultMessage);
 
-            FTimerHandle FadeHandle;
-            GetWorldTimerManager().SetTimer(FadeHandle, [Widget]()
-                {
-                    Widget->PlayFadeOut();
-                }, 2.0f, false);
+                FTimerHandle FadeHandle;
+                GetWorldTimerManager().SetTimer(FadeHandle, [Widget]()
+                    {
+                        Widget->PlayFadeOut();
+                    }, 2.0f, false);
+            }
         }
     }
 
-    // スクリーンショット保存
+    // スクリーンショット（フラッシュ前）
     FString ScreenshotName = FString::Printf(TEXT("Photo_%s.png"),
         *FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S")));
     FString SavePath = FPaths::ProjectSavedDir() + "Screenshots/" + ScreenshotName;
+
     FScreenshotRequest::RequestScreenshot(SavePath, false, false);
+    UE_LOG(LogTemp, Warning, TEXT("📷 スクリーンショット保存: %s"), *SavePath);
 
-    // フラッシュ演出
-    if (APlayerController* PC = Cast<APlayerController>(GetController()))
-    {
-        if (APlayerCameraManager* CamMgr = PC->PlayerCameraManager)
+    // FlashColor をラムダに渡す
+    FLinearColor FlashColorCopy = FlashColor;
+
+    // 遅延してフラッシュ
+    FTimerHandle FlashHandle;
+    GetWorldTimerManager().SetTimer(FlashHandle, [this, FlashColorCopy]()
         {
-            CamMgr->StartCameraFade(0.f, 1.f, 0.15f, FlashColor, false, true);
-
-            FTimerHandle Handle;
-            GetWorldTimerManager().SetTimer(Handle, [CamMgr, FlashColor]()
+            if (APlayerController* PC = Cast<APlayerController>(GetController()))
+            {
+                if (APlayerCameraManager* CamMgr = PC->PlayerCameraManager)
                 {
-                    CamMgr->StartCameraFade(1.f, 0.f, 0.8f, FlashColor, false, true);
-                }, 0.3f, false);
-        }
-    }
+                    CamMgr->StartCameraFade(0.f, 1.f, 0.15f, FlashColorCopy, false, true);
+
+                    FTimerHandle Handle2;
+                    GetWorldTimerManager().SetTimer(Handle2, [CamMgr, FlashColorCopy]()
+                        {
+                            CamMgr->StartCameraFade(1.f, 0.f, 0.8f, FlashColorCopy, false, true);
+                        }, 0.3f, false);
+                }
+            }
+        }, 0.1f, false);
 
     // クールタイム解除
     FTimerHandle ResetHandle;

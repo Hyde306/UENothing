@@ -1,69 +1,57 @@
 ﻿#include "PhotoSpot.h"
-#include "Components/BoxComponent.h"
 #include "Engine/Engine.h"
-#include "MyCharacter.h"
+#include "Kismet/GameplayStatics.h"
 
 APhotoSpot::APhotoSpot()
-    : BestLocation(FVector::ZeroVector)
-    , BestRotation(FRotator::ZeroRotator)
 {
     PrimaryActorTick.bCanEverTick = false;
-
-    TriggerBox = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerBox"));
-    RootComponent = TriggerBox;
-
-    TriggerBox->InitBoxExtent(FVector(200.f, 200.f, 100.f));
-    TriggerBox->SetCollisionProfileName(TEXT("Trigger"));
 }
 
 void APhotoSpot::BeginPlay()
 {
     Super::BeginPlay();
-
-    TriggerBox->OnComponentBeginOverlap.AddDynamic(this, &APhotoSpot::OnPlayerEnter);
-    TriggerBox->OnComponentEndOverlap.AddDynamic(this, &APhotoSpot::OnPlayerExit);
 }
 
-void APhotoSpot::OnPlayerEnter(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-    bool bFromSweep, const FHitResult& SweepResult)
+int32 APhotoSpot::EvaluatePhoto(const FVector& CameraLocation)
 {
-    if (Cast<AMyCharacter>(OtherActor))
+    // 撮影回数上限チェック
+    if (SuccessfulCaptureCount >= MaxCaptureCount)
     {
-        bPlayerInside = true;
-        UE_LOG(LogTemp, Warning, TEXT("Player entered photo spot: %s"), *SpotName);
-    }
-}
-
-void APhotoSpot::OnPlayerExit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-    if (Cast<AMyCharacter>(OtherActor))
-    {
-        bPlayerInside = false;
-        UE_LOG(LogTemp, Warning, TEXT("Player left photo spot: %s"), *SpotName);
-    }
-}
-
-int32 APhotoSpot::EvaluatePhoto(const FVector& CameraLocation, const FRotator& CameraRotation) const
-{
-    if (!bPlayerInside)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("📷 撮影失敗: スポット外"));
-        return 0;
+        UE_LOG(LogTemp, Warning, TEXT("📷 撮影失敗: %s はこれ以上撮影できません"), *SpotName);
+        return -2; // 特別な失敗コード
     }
 
-    float Distance = FVector::Dist(CameraLocation, BestLocation);
-    float DistanceRate = 1.0f - FMath::Clamp(Distance / MaxDistanceTolerance, 0.0f, 1.0f);
+    // 距離チェック
+    float Distance = FVector::Dist(CameraLocation, GetActorLocation());
+    if (Distance > MaxDistanceTolerance)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("📷 撮影失敗: 距離が遠すぎる (%.1f)"), Distance);
+        return -1; // 距離失敗
+    }
 
-    float AngleDiff = FMath::Abs((CameraRotation - BestRotation).Yaw);
-    float AngleRate = 1.0f - FMath::Clamp(AngleDiff / MaxAngleTolerance, 0.0f, 1.0f);
+    APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+    if (!PC) return 0;
 
-    float FinalRate = (DistanceRate + AngleRate) * 0.5f;
-    int32 FinalScore = FMath::RoundToInt(MaxScore * FinalRate);
+    // バウンディングボックス判定（省略）
 
-    UE_LOG(LogTemp, Warning, TEXT("📷 撮影成功! スコア: %d (距離率: %.2f, 角度率: %.2f)"),
-        FinalScore, DistanceRate, AngleRate);
+    // 中心判定
+    int32 ScreenX, ScreenY;
+    PC->GetViewportSize(ScreenX, ScreenY);
+    FVector2D ScreenCenter(ScreenX / 2.0f, ScreenY / 2.0f);
+    FVector2D SpotCenter;
+    PC->ProjectWorldLocationToScreen(GetActorLocation(), SpotCenter);
+
+    float DistanceFromCenter = FVector2D::Distance(SpotCenter, ScreenCenter);
+    float MaxScreenDistance = FVector2D(ScreenX, ScreenY).Size() / 2.0f;
+
+    float CenterRate = FMath::Clamp(1.0f - (DistanceFromCenter / MaxScreenDistance), 0.0f, 1.0f);
+    int32 FinalScore = FMath::RoundToInt(MaxScore * CenterRate);
+
+    // 成功したらカウントを増やす
+    SuccessfulCaptureCount++;
+
+    UE_LOG(LogTemp, Warning, TEXT("📷 撮影成功! スコア: %d (中心率: %.2f) 残り撮影可能回数: %d"),
+        FinalScore, CenterRate, MaxCaptureCount - SuccessfulCaptureCount);
 
     return FinalScore;
 }
