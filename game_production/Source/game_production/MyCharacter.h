@@ -4,6 +4,7 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/TextBlock.h"
 #include "MyCharacter.generated.h"
 
 UCLASS()
@@ -32,7 +33,7 @@ protected:
     float DefaultFOV = 90.f;
     float PhotoFOV = 45.f;
     float ZoomInterpSpeed = 8.f;
-    float TargetFOV = 90.f; // ← Tickで補間する目標値
+    float TargetFOV = 90.f;
 
     // ===== Enhanced Input =====
     UPROPERTY(EditDefaultsOnly, Category = "Input")
@@ -64,20 +65,25 @@ protected:
     class UCameraComponent* FollowCamera;
 
     // ===== UI =====
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
     TSubclassOf<UUserWidget> CameraUIClass;
 
     UUserWidget* CameraUIInstance;
 
-    // 撮影時の文字
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
     TSubclassOf<UUserWidget> PhotoResultWidgetClass;
 
     UUserWidget* PhotoResultWidgetInstance;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+    TSubclassOf<UUserWidget> TimerUIClass;   // タイマーUI
 
-public:
+    UUserWidget* TimerUIInstance;            // タイマーUIインスタンス
+    UPROPERTY()
+    class UTextBlock* TimerTextBlock;        // TimerText
+
     // ===== 状態 =====
+public:
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bIsRunning = false;
 
@@ -89,4 +95,12 @@ public:
 
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bIsTakingPhoto = false;
+
+    // ===== 撮影タイム計測 =====
+
+    UFUNCTION(BlueprintCallable, Category = "Photo")
+    float GetPhotoElapsedTime() const { return PhotoElapsedTime; }
+private:
+    float PhotoStartTime = 0.f;
+    float PhotoElapsedTime = 0.f;
 };

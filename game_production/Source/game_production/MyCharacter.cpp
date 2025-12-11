@@ -54,6 +54,21 @@ void AMyCharacter::BeginPlay()
                 Subsystem->AddMappingContext(IMC_Player, 0);
         }
     }
+
+    PhotoStartTime = GetWorld()->GetTimeSeconds();
+
+    if (TimerUIClass)
+    {
+        TimerUIInstance = CreateWidget<UUserWidget>(GetWorld(), TimerUIClass);
+        if (TimerUIInstance)
+        {
+            TimerUIInstance->AddToViewport();
+            TimerTextBlock = Cast<UTextBlock>(TimerUIInstance->GetWidgetFromName(TEXT("TimerText")));
+
+        }
+    }
+
+
 }
 
 // ===========================
@@ -255,14 +270,14 @@ void AMyCharacter::TakePhoto()
     if (HitSpot)
     {
         ResultMessage = FString::Printf(
-            TEXT("%s 撮影成功！ スコア: %d"),
+            TEXT("%s 撮影成功！\n         スコア: %d"),
             *HitSpot->GetSpotName(), HitScore
         );
         FlashColor = FLinearColor::White;
     }
     else
     {
-        ResultMessage = TEXT("撮影失敗");
+        ResultMessage = TEXT("                  撮影失敗");
         FlashColor = FLinearColor::Red;
     }
 
@@ -354,6 +369,16 @@ void AMyCharacter::Tick(float DeltaTime)
     float CurrentFOV = FollowCamera->FieldOfView;
     float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, ZoomInterpSpeed);
     FollowCamera->SetFieldOfView(NewFOV);
+
+    PhotoElapsedTime = GetWorld()->GetTimeSeconds() - PhotoStartTime;
+
+    if (TimerTextBlock)
+    {
+        int32 Minutes = FMath::FloorToInt(PhotoElapsedTime / 60.f);
+        int32 Seconds = FMath::FloorToInt(FMath::Fmod(PhotoElapsedTime, 60.f));
+        FString TimerStr = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
+        TimerTextBlock->SetText(FText::FromString(TimerStr));
+    }
 }
 
 

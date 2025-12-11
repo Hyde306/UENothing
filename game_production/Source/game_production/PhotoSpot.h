@@ -63,6 +63,8 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
     float MoveSpeed = 2.0f;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+    int32 BestScore = 0;
 private:
     FVector StartLocation;
 };
