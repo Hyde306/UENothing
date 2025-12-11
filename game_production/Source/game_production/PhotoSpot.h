@@ -4,6 +4,9 @@
 #include "GameFramework/Actor.h"
 #include "PhotoSpot.generated.h"
 
+class USphereComponent;
+class USceneComponent;
+
 UCLASS()
 class GAME_PRODUCTION_API APhotoSpot : public AActor
 {
@@ -11,46 +14,53 @@ class GAME_PRODUCTION_API APhotoSpot : public AActor
 
 public:
     APhotoSpot();
+    virtual void OnConstruction(const FTransform& Transform) override;
+    virtual void Tick(float DeltaTime) override;
 
 protected:
     virtual void BeginPlay() override;
-    virtual void Tick(float DeltaTime) override;
 
 public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
     FString SpotName = TEXT("Unnamed Spot");
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
-    int32 MaxScore = 100;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
+    int32 MaxCaptureCount = 3;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PhotoSpot")
+    int32 SuccessfulCaptureCount = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
     float MaxDistanceTolerance = 1000.f;
 
-    UFUNCTION(BlueprintCallable, Category = "PhotoSpot|Scoring")
-    int32 EvaluatePhoto(const FVector& CameraLocation);
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
+    int32 MaxScore = 100;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PhotoSpot")
+    USceneComponent* PhotoCenter;
 
     UFUNCTION(BlueprintCallable, Category = "PhotoSpot")
     FString GetSpotName() const { return SpotName; }
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PhotoSpot|Scoring")
-    int32 SuccessfulCaptureCount = 0;
+    UFUNCTION(BlueprintCallable, Category = "PhotoSpot")
+    int32 EvaluatePhoto(const FVector& CameraLocation);
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
-    int32 MaxCaptureCount = 3;
+    UFUNCTION(BlueprintCallable, Category = "PhotoSpot")
+    bool IsFullyVisibleOnScreen(APlayerController* PC) const;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-    USceneComponent* PhotoCenter;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
+    float FramingRadius = 100.0f;
 
-    // -------------------------
-    // 上下動のための値
-    // -------------------------
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Move")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PhotoSpot")
+    USphereComponent* FramingSphere;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
     bool bEnableMove = false;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Move")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
     float MoveRange = 50.0f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Move")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot")
     float MoveSpeed = 2.0f;
 
 private:

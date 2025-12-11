@@ -201,10 +201,7 @@ void AMyCharacter::TakePhoto()
     APhotoSpot* HitSpot = nullptr;
     int32 HitScore = 0;
 
-    // ---- 撮影判定 ----
     FVector Forward = FollowCamera->GetForwardVector();
-
-    // ---- 視線レイ判定 ----
 
     FHitResult Hit;
     FVector Start = CameraLocation;
@@ -228,7 +225,19 @@ void AMyCharacter::TakePhoto()
         LookAtSpot = Cast<APhotoSpot>(Hit.GetActor());
     }
 
-    // ---- 撮影成功判定 ----
+    APlayerController* PC = Cast<APlayerController>(GetController());
+    if (!PC) return;
+
+    if (LookAtSpot)
+    {
+        bool bFramed = LookAtSpot->IsFullyVisibleOnScreen(PC);
+
+        if (!bFramed)
+        {
+            LookAtSpot = nullptr;
+        }
+    }
+
     if (LookAtSpot)
     {
         int32 Score = LookAtSpot->EvaluatePhoto(CameraLocation);
@@ -240,16 +249,15 @@ void AMyCharacter::TakePhoto()
         }
     }
 
-
-    // ---- UI とフラッシュ処理 ----
-
     FString ResultMessage;
     FLinearColor FlashColor;
 
     if (HitSpot)
     {
-        ResultMessage = FString::Printf(TEXT("%s 撮影成功！ スコア: %d"),
-            *HitSpot->GetSpotName(), HitScore);
+        ResultMessage = FString::Printf(
+            TEXT("%s 撮影成功！ スコア: %d"),
+            *HitSpot->GetSpotName(), HitScore
+        );
         FlashColor = FLinearColor::White;
     }
     else
@@ -258,7 +266,6 @@ void AMyCharacter::TakePhoto()
         FlashColor = FLinearColor::Red;
     }
 
-    // UI を一度だけ作る
     if (PhotoResultWidgetClass)
     {
         UPhotoResultWidget* Widget =
@@ -283,8 +290,6 @@ void AMyCharacter::TakePhoto()
         }
     }
 
-    // ---- スクリーンショット ----
-
     FString ScreenshotName = FString::Printf(
         TEXT("Photo_%s.png"),
         *FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S"))
@@ -293,10 +298,6 @@ void AMyCharacter::TakePhoto()
     FString SavePath = FPaths::ProjectSavedDir() + "Screenshots/" + ScreenshotName;
 
     FScreenshotRequest::RequestScreenshot(SavePath, false, false);
-
-    UE_LOG(LogTemp, Warning, TEXT("📷 スクリーンショット保存: %s"), *SavePath);
-
-    // ---- フラッシュ ----
 
     FTimerHandle FlashHandle;
     FLinearColor FlashCopy = FlashColor;
@@ -328,7 +329,6 @@ void AMyCharacter::TakePhoto()
         false
     );
 
-    // クールタイム解除
     FTimerHandle ResetHandle;
     GetWorldTimerManager().SetTimer(
         ResetHandle,
@@ -340,6 +340,7 @@ void AMyCharacter::TakePhoto()
         false
     );
 }
+
 
 
 
