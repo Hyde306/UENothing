@@ -254,7 +254,7 @@ void AMyCharacter::TakePhoto()
     }
     else
     {
-        ResultMessage = TEXT("撮影失敗（条件不一致）");
+        ResultMessage = TEXT("撮影失敗");
         FlashColor = FLinearColor::Red;
     }
 

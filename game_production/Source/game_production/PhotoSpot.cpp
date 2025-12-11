@@ -4,7 +4,7 @@
 
 APhotoSpot::APhotoSpot()
 {
-    PrimaryActorTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = true;
 
     RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 
@@ -16,6 +16,8 @@ APhotoSpot::APhotoSpot()
 void APhotoSpot::BeginPlay()
 {
     Super::BeginPlay();
+        
+    StartLocation = GetActorLocation();
 }
 
 int32 APhotoSpot::EvaluatePhoto(const FVector& CameraLocation)
@@ -37,8 +39,6 @@ int32 APhotoSpot::EvaluatePhoto(const FVector& CameraLocation)
 
     APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
     if (!PC) return 0;
-
-    // バウンディングボックス判定（省略）
 
     // 中心判定
     int32 ScreenX, ScreenY;
@@ -62,4 +62,19 @@ int32 APhotoSpot::EvaluatePhoto(const FVector& CameraLocation)
         FinalScore, CenterRate, MaxCaptureCount - SuccessfulCaptureCount);
 
     return FinalScore;
+}
+
+void APhotoSpot::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+
+    if (!bEnableMove) return;
+
+    float Time = GetWorld()->GetTimeSeconds();
+    float OffsetZ = FMath::Sin(Time * MoveSpeed) * MoveRange;
+
+    FVector NewLocation = StartLocation;
+    NewLocation.Z += OffsetZ;
+
+    SetActorLocation(NewLocation);
 }
