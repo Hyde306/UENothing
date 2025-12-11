@@ -5,6 +5,12 @@
 APhotoSpot::APhotoSpot()
 {
     PrimaryActorTick.bCanEverTick = false;
+
+    RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+
+    PhotoCenter = CreateDefaultSubobject<USceneComponent>(TEXT("PhotoCenter"));
+    PhotoCenter->SetupAttachment(RootComponent);
+    
 }
 
 void APhotoSpot::BeginPlay()
@@ -39,7 +45,9 @@ int32 APhotoSpot::EvaluatePhoto(const FVector& CameraLocation)
     PC->GetViewportSize(ScreenX, ScreenY);
     FVector2D ScreenCenter(ScreenX / 2.0f, ScreenY / 2.0f);
     FVector2D SpotCenter;
-    PC->ProjectWorldLocationToScreen(GetActorLocation(), SpotCenter);
+    FVector CenterLocation = PhotoCenter->GetComponentLocation();
+    PC->ProjectWorldLocationToScreen(CenterLocation, SpotCenter);
+
 
     float DistanceFromCenter = FVector2D::Distance(SpotCenter, ScreenCenter);
     float MaxScreenDistance = FVector2D(ScreenX, ScreenY).Size() / 2.0f;
