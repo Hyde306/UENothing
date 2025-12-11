@@ -43,4 +43,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PhotoSpot|Scoring")
     int32 MaxCaptureCount = 3;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+    USceneComponent* PhotoCenter;
 };
