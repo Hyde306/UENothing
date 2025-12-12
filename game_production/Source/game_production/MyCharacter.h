@@ -29,6 +29,7 @@ protected:
     void StopRun();
     void TogglePhotoMode();
     void TakePhoto();
+    void FinishGame();
 
     float DefaultFOV = 90.f;
     float PhotoFOV = 45.f;
@@ -57,6 +58,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     class UInputAction* IA_TakePhoto;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+    class UInputAction* IA_FinishGame;
+
     // ===== カメラ =====
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
     class USpringArmComponent* SpringArm;
@@ -81,6 +85,14 @@ protected:
     UUserWidget* TimerUIInstance;            // タイマーUIインスタンス
     UPROPERTY()
     class UTextBlock* TimerTextBlock;        // TimerText
+
+    // ===== Result UI =====
+    UPROPERTY(EditAnywhere, Category = "UI")
+    TSubclassOf<class UResultWidget> ResultWidgetClass;
+
+    UPROPERTY()
+    class UResultWidget* ResultWidgetInstance;
+
 
     // ===== 状態 =====
 public:

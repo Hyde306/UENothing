@@ -11,6 +11,8 @@
 #include "HighResScreenshot.h"
 #include "PhotoSpot.h"
 #include "PhotoResultWidget.h"
+#include "MyGameInstance.h"
+#include "ResultWidget.h"
 
 // ===========================
 // コンストラクタ
@@ -103,6 +105,12 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
         if (IA_TakePhoto)
             EnhancedInput->BindAction(IA_TakePhoto, ETriggerEvent::Started, this, &AMyCharacter::TakePhoto);
+
+        if (IA_FinishGame)
+        {
+            EnhancedInput->BindAction(IA_FinishGame, ETriggerEvent::Started, this, &AMyCharacter::FinishGame);
+        }
+
     }
 }
 
@@ -269,10 +277,7 @@ void AMyCharacter::TakePhoto()
 
     if (HitSpot)
     {
-        ResultMessage = FString::Printf(
-            TEXT("%s 撮影成功！\n         スコア: %d"),
-            *HitSpot->GetSpotName(), HitScore
-        );
+        ResultMessage = FString::Printf(TEXT("%s 撮影成功！\n         スコア: %d"),*HitSpot->GetSpotName(), HitScore);
         FlashColor = FLinearColor::White;
     }
     else
@@ -356,6 +361,34 @@ void AMyCharacter::TakePhoto()
     );
 }
 
+void AMyCharacter::FinishGame()
+{
+    UE_LOG(LogTemp, Warning, TEXT("FinishGame CALLED"));
+
+    UMyGameInstance* GI = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(this));
+    if (!GI) return;
+
+    GI->SetClearTime(PhotoElapsedTime);
+
+    if (ResultWidgetClass)
+    {
+        ResultWidgetInstance = CreateWidget<UResultWidget>(GetWorld(), ResultWidgetClass);
+        if (ResultWidgetInstance)
+        {
+            ResultWidgetInstance->AddToViewport();
+        }
+    }
+
+    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+    if (PC && ResultWidgetInstance)
+    {
+        PC->bShowMouseCursor = true;
+
+        FInputModeUIOnly Mode;
+        Mode.SetWidgetToFocus(ResultWidgetInstance->GetCachedWidget());
+        PC->SetInputMode(Mode);
+    }
+}
 
 
 
@@ -380,7 +413,6 @@ void AMyCharacter::Tick(float DeltaTime)
         TimerTextBlock->SetText(FText::FromString(TimerStr));
     }
 }
-
 
 void AMyCharacter::StartJump()
 {
