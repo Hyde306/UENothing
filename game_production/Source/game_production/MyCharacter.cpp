@@ -220,27 +220,19 @@ void AMyCharacter::TakePhoto()
     bIsTakingPhoto = true;
 
     FVector CameraLocation = FollowCamera->GetComponentLocation();
-
     APhotoSpot* HitSpot = nullptr;
     int32 HitScore = 0;
 
+    // カメラ前方方向
     FVector Forward = FollowCamera->GetForwardVector();
 
     FHitResult Hit;
     FVector Start = CameraLocation;
     FVector End = Start + Forward * 1500.0f;
-
     FCollisionQueryParams Params;
     Params.AddIgnoredActor(this);
 
-    bool bHit = GetWorld()->LineTraceSingleByChannel(
-        Hit,
-        Start,
-        End,
-        ECC_Visibility,
-        Params
-    );
-
+    bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
     APhotoSpot* LookAtSpot = nullptr;
 
     if (bHit)
@@ -249,18 +241,18 @@ void AMyCharacter::TakePhoto()
     }
 
     APlayerController* PC = Cast<APlayerController>(GetController());
-    if (!PC) return;
-
-    if (LookAtSpot)
+    if (!PC)
     {
-        bool bFramed = LookAtSpot->IsFullyVisibleOnScreen(PC);
-
-        if (!bFramed)
-        {
-            LookAtSpot = nullptr;
-        }
+        bIsTakingPhoto = false;
+        return;
     }
 
+    if (LookAtSpot && !LookAtSpot->IsFullyVisibleOnScreen(PC))
+    {
+        LookAtSpot = nullptr;
+    }
+
+    // 撮影成功時のスコア計算
     if (LookAtSpot)
     {
         int32 Score = LookAtSpot->EvaluatePhoto(CameraLocation);
@@ -269,15 +261,21 @@ void AMyCharacter::TakePhoto()
         {
             HitSpot = LookAtSpot;
             HitScore = Score;
+
+            // GameInstance に最高スコアを更新
+            if (UMyGameInstance* GI = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(this)))
+            {
+                GI->UpdatePhotoScore(HitSpot->GetSpotName(), HitScore);
+            }
         }
     }
 
+    // 撮影結果メッセージとフラッシュ色
     FString ResultMessage;
     FLinearColor FlashColor;
-
     if (HitSpot)
     {
-        ResultMessage = FString::Printf(TEXT("%s 撮影成功！\n         スコア: %d"),*HitSpot->GetSpotName(), HitScore);
+        ResultMessage = FString::Printf(TEXT("%s 撮影成功！\n         スコア: %d"), *HitSpot->GetSpotName(), HitScore);
         FlashColor = FLinearColor::White;
     }
     else
@@ -286,11 +284,10 @@ void AMyCharacter::TakePhoto()
         FlashColor = FLinearColor::Red;
     }
 
+    // UI表示
     if (PhotoResultWidgetClass)
     {
-        UPhotoResultWidget* Widget =
-            CreateWidget<UPhotoResultWidget>(GetWorld(), PhotoResultWidgetClass);
-
+        UPhotoResultWidget* Widget = CreateWidget<UPhotoResultWidget>(GetWorld(), PhotoResultWidgetClass);
         if (Widget)
         {
             Widget->AddToViewport();
@@ -298,33 +295,22 @@ void AMyCharacter::TakePhoto()
             Widget->SetResultText(ResultMessage);
 
             FTimerHandle FadeHandle;
-            GetWorldTimerManager().SetTimer(
-                FadeHandle,
-                [Widget]()
+            GetWorldTimerManager().SetTimer(FadeHandle, [Widget]()
                 {
                     Widget->PlayFadeOut();
-                },
-                2.0f,
-                false
-            );
+                }, 2.0f, false);
         }
     }
 
-    FString ScreenshotName = FString::Printf(
-        TEXT("Photo_%s.png"),
-        *FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S"))
-    );
-
+    // スクリーンショット保存
+    FString ScreenshotName = FString::Printf(TEXT("Photo_%s.png"), *FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S")));
     FString SavePath = FPaths::ProjectSavedDir() + "Screenshots/" + ScreenshotName;
-
     FScreenshotRequest::RequestScreenshot(SavePath, false, false);
 
+    // フラッシュ演出
     FTimerHandle FlashHandle;
     FLinearColor FlashCopy = FlashColor;
-
-    GetWorldTimerManager().SetTimer(
-        FlashHandle,
-        [this, FlashCopy]()
+    GetWorldTimerManager().SetTimer(FlashHandle, [this, FlashCopy]()
         {
             if (APlayerController* PC = Cast<APlayerController>(GetController()))
             {
@@ -333,33 +319,22 @@ void AMyCharacter::TakePhoto()
                     CamMgr->StartCameraFade(0.f, 1.f, 0.15f, FlashCopy, false, true);
 
                     FTimerHandle Handle2;
-                    GetWorldTimerManager().SetTimer(
-                        Handle2,
-                        [CamMgr, FlashCopy]()
+                    GetWorldTimerManager().SetTimer(Handle2, [CamMgr, FlashCopy]()
                         {
                             CamMgr->StartCameraFade(1.f, 0.f, 0.8f, FlashCopy, false, true);
-                        },
-                        0.3f,
-                        false
-                    );
+                        }, 0.3f, false);
                 }
             }
-        },
-        0.1f,
-        false
-    );
+        }, 0.1f, false);
 
+    // 撮影可能状態のリセット
     FTimerHandle ResetHandle;
-    GetWorldTimerManager().SetTimer(
-        ResetHandle,
-        [this]()
+    GetWorldTimerManager().SetTimer(ResetHandle, [this]()
         {
             bIsTakingPhoto = false;
-        },
-        1.0f,
-        false
-    );
+        }, 1.0f, false);
 }
+
 
 void AMyCharacter::FinishGame()
 {
@@ -379,18 +354,14 @@ void AMyCharacter::FinishGame()
         }
     }
 
-    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-    if (PC && ResultWidgetInstance)
+    if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
     {
         PC->bShowMouseCursor = true;
 
         FInputModeUIOnly Mode;
-        Mode.SetWidgetToFocus(ResultWidgetInstance->GetCachedWidget());
         PC->SetInputMode(Mode);
     }
 }
-
-
 
 // ===========================
 // Tick

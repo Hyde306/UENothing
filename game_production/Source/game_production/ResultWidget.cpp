@@ -7,10 +7,12 @@ void UResultWidget::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    SetIsFocusable(true);
+    TotalScoreText = Cast<UTextBlock>(GetWidgetFromName(TEXT("TotalScoreText")));
+    TimeText = Cast<UTextBlock>(GetWidgetFromName(TEXT("TimeText")));
 
     UpdateResult();
 }
+
 
 void UResultWidget::UpdateResult()
 {
@@ -18,17 +20,23 @@ void UResultWidget::UpdateResult()
     if (!GI) return;
 
     int32 TotalScore = GI->GetTotalScore();
-    float Time = GI->ClearTime;
+    int32 ElapsedTime = FMath::FloorToInt(GI->ClearTime); // タイムを整数化
+
+    // タイムをスコアに換算
+    int32 TimeScore = 600 - (ElapsedTime / 15) * 10;
+    TimeScore = FMath::Max(TimeScore, 0); // 最低スコアは0
+
+    int32 CombinedScore = TotalScore + TimeScore;
 
     if (TotalScoreText)
     {
-        TotalScoreText->SetText(FText::AsNumber(TotalScore));
+        FString ScoreString = FString::Printf(TEXT("Score: %d"), CombinedScore);
+        TotalScoreText->SetText(FText::FromString(ScoreString));
     }
 
     if (TimeText)
     {
-        // 秒 → 小数第1位まで
-        FString TimeString = FString::Printf(TEXT("%.1f"), Time);
+        FString TimeString = FString::Printf(TEXT("Time: %d"), ElapsedTime);
         TimeText->SetText(FText::FromString(TimeString));
     }
 }
