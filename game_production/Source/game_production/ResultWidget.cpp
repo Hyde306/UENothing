@@ -39,4 +39,28 @@ void UResultWidget::UpdateResult()
         FString TimeString = FString::Printf(TEXT("Time: %d"), ElapsedTime);
         TimeText->SetText(FText::FromString(TimeString));
     }
+    const TArray<int32>& Ranking = GI->ScoreRanking;
+
+    UTextBlock* RankTexts[6] =
+    {
+        Rank1Text, Rank2Text, Rank3Text,
+        Rank4Text, Rank5Text, Rank6Text
+    };
+
+    for (int32 i = 0; i < 6; i++)
+    {
+        if (!RankTexts[i]) continue;
+
+        if (Ranking.IsValidIndex(i))
+        {
+            FString RankString =
+                FString::Printf(TEXT("%d : %d"), i + 1, Ranking[i]);
+            RankTexts[i]->SetText(FText::FromString(RankString));
+        }
+        else
+        {
+            RankTexts[i]->SetText(FText::FromString(TEXT("-")));
+        }
+    }
+
 }

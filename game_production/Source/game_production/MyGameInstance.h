@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "MySaveGame.h"
 #include "MyGameInstance.generated.h"
 
 UCLASS()
@@ -18,13 +19,30 @@ public:
     UPROPERTY(BlueprintReadOnly)
     float ClearTime = 0.0f;
 
-public:
-    // スコア更新（大きい方だけ保持）
+    // スコアランキング（高い順）
+    UPROPERTY(BlueprintReadOnly)
+    TArray<int32> ScoreRanking;
+
+    // 撮影スコア更新
     void UpdatePhotoScore(const FString& SpotName, int32 Score);
+
+    // ランキングにスコアを追加
+    void AddScoreToRanking(int32 FinalScore);
 
     // タイム記録
     void SetClearTime(float Time);
 
-    // 合計スコア計算
+    // 合計スコア
     int32 GetTotalScore() const;
+
+protected:
+    // 起動時（ここでロード）
+    virtual void Init() override;
+
+private:
+    void LoadRanking();
+    void SaveRanking();
+
+    const FString SaveSlotName = TEXT("RankingSave");
+    const int32 SaveUserIndex = 0;
 };

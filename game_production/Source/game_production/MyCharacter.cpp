@@ -343,8 +343,24 @@ void AMyCharacter::FinishGame()
     UMyGameInstance* GI = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(this));
     if (!GI) return;
 
+    // クリアタイム保存
     GI->SetClearTime(PhotoElapsedTime);
 
+    // 撮影スコア合計
+    int32 PhotoScore = GI->GetTotalScore();
+
+    // タイムスコア（15秒ごとに10点減点）
+    int32 ElapsedTime = FMath::FloorToInt(PhotoElapsedTime);
+    int32 TimeScore = 600 - (ElapsedTime / 15) * 10;
+    TimeScore = FMath::Max(TimeScore, 0);
+
+    // 最終スコア確定
+    int32 FinalScore = PhotoScore + TimeScore;
+
+    // ランキングに登録
+    GI->AddScoreToRanking(FinalScore);
+
+    // リザルトUI表示
     if (ResultWidgetClass)
     {
         ResultWidgetInstance = CreateWidget<UResultWidget>(GetWorld(), ResultWidgetClass);
@@ -354,6 +370,7 @@ void AMyCharacter::FinishGame()
         }
     }
 
+    // 入力をUIに
     if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
     {
         PC->bShowMouseCursor = true;
@@ -362,6 +379,7 @@ void AMyCharacter::FinishGame()
         PC->SetInputMode(Mode);
     }
 }
+
 
 // ===========================
 // Tick

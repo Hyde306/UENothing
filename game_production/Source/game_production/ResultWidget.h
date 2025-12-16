@@ -21,4 +21,18 @@ protected:
 
     UPROPERTY(meta = (BindWidget))
     class UTextBlock* TimeText;
+
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* Rank1Text;
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* Rank2Text;
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* Rank3Text;
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* Rank4Text;
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* Rank5Text;
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* Rank6Text;
+
 };
