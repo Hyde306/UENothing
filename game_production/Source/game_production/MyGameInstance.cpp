@@ -108,3 +108,8 @@ void UMyGameInstance::SaveRanking()
         SaveUserIndex
     );
 }
+
+int32 UMyGameInstance::GetCapturedPhotoCount() const
+{
+    return PhotoBestScores.Num();
+}

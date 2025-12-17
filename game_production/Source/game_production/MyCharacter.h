@@ -86,6 +86,8 @@ protected:
     UPROPERTY()
     class UTextBlock* TimerTextBlock;        // TimerText
 
+    UPROPERTY()
+    UTextBlock* PhotoCountText;
     // ===== Result UI =====
     UPROPERTY(EditAnywhere, Category = "UI")
     TSubclassOf<class UResultWidget> ResultWidgetClass;

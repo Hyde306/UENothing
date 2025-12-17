@@ -35,6 +35,8 @@ public:
     // 合計スコア
     int32 GetTotalScore() const;
 
+    int32 GetCapturedPhotoCount() const;
+
 protected:
     // 起動時（ここでロード）
     virtual void Init() override;
@@ -45,4 +47,5 @@ private:
 
     const FString SaveSlotName = TEXT("RankingSave");
     const int32 SaveUserIndex = 0;
+
 };

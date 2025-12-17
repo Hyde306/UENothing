@@ -69,6 +69,14 @@ void AMyCharacter::BeginPlay()
 
         }
     }
+    if (TimerUIInstance)
+    {
+        TimerTextBlock =
+            Cast<UTextBlock>(TimerUIInstance->GetWidgetFromName(TEXT("TimerText")));
+
+        PhotoCountText =
+            Cast<UTextBlock>(TimerUIInstance->GetWidgetFromName(TEXT("PhotoCountText")));
+    }
 
 
 }
@@ -401,6 +409,18 @@ void AMyCharacter::Tick(float DeltaTime)
         FString TimerStr = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
         TimerTextBlock->SetText(FText::FromString(TimerStr));
     }
+
+    if (PhotoCountText)
+    {
+        if (UMyGameInstance* GI =
+            Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(this)))
+        {
+            int32 Count = GI->GetCapturedPhotoCount();
+            FString Str = FString::Printf(TEXT("Photo: %d"), Count);
+            PhotoCountText->SetText(FText::FromString(Str));
+        }
+    }
+
 }
 
 void AMyCharacter::StartJump()
