@@ -77,7 +77,7 @@ int32 APhotoSpot::EvaluatePhoto(const FVector& CameraLocation)
     float CenterRate = FMath::Clamp(1.0f - DistCenter / MaxDist, 0.0f, 1.0f);
     int32 Score = FMath::RoundToInt(MaxScore * CenterRate);
 
-    // ここで最高スコアを更新
+    // 最高スコアを更新
     BestScore = FMath::Max(BestScore, Score);
 
     SuccessfulCaptureCount++;

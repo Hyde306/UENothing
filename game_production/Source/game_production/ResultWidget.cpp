@@ -1,4 +1,4 @@
-#include "ResultWidget.h"
+ï»¿#include "ResultWidget.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 #include "MyGameInstance.h"
@@ -13,6 +13,29 @@ void UResultWidget::NativeConstruct()
     UpdateResult();
 }
 
+void UResultWidget::NativeTick(
+    const FGeometry& MyGeometry,
+    float InDeltaTime)
+{
+    Super::NativeTick(MyGeometry, InDeltaTime);
+
+    RainbowTime += InDeltaTime;
+
+    if (Rank1Text)
+    {
+        // è‰²ç›¸ã‚’å›žã™ï¼ˆ0ã€œ360ï¼‰
+        float Hue = FMath::Fmod(RainbowTime * 120.f, 360.f);
+
+        FLinearColor RainbowColor =
+            FLinearColor::MakeFromHSV8(
+                (uint8)(Hue / 360.f * 255.f),
+                255,
+                255
+            );
+
+        Rank1Text->SetColorAndOpacity(RainbowColor);
+    }
+}
 
 void UResultWidget::UpdateResult()
 {
@@ -20,11 +43,11 @@ void UResultWidget::UpdateResult()
     if (!GI) return;
 
     int32 TotalScore = GI->GetTotalScore();
-    int32 ElapsedTime = FMath::FloorToInt(GI->ClearTime); // ƒ^ƒCƒ€‚ð®”‰»
+    int32 ElapsedTime = FMath::FloorToInt(GI->ClearTime); // ã‚¿ã‚¤ãƒ ã‚’æ•´æ•°åŒ–
 
-    // ƒ^ƒCƒ€‚ðƒXƒRƒA‚ÉŠ·ŽZ
+    // ã‚¿ã‚¤ãƒ ã‚’ã‚¹ã‚³ã‚¢ã«æ›ç®—
     int32 TimeScore = 600 - (ElapsedTime / 15) * 10;
-    TimeScore = FMath::Max(TimeScore, 0); // Å’áƒXƒRƒA‚Í0
+    TimeScore = FMath::Max(TimeScore, 0); // æœ€ä½Žã‚¹ã‚³ã‚¢ã¯0
 
     int32 CombinedScore = TotalScore + TimeScore;
 
@@ -32,12 +55,14 @@ void UResultWidget::UpdateResult()
     {
         FString ScoreString = FString::Printf(TEXT("Score: %d"), CombinedScore);
         TotalScoreText->SetText(FText::FromString(ScoreString));
+        TotalScoreText->SetColorAndOpacity(FLinearColor(FColor(255, 255, 0)));
     }
 
     if (TimeText)
     {
         FString TimeString = FString::Printf(TEXT("Time: %d"), ElapsedTime);
         TimeText->SetText(FText::FromString(TimeString));
+        TimeText->SetColorAndOpacity(FLinearColor(FColor(0, 0, 255)));
     }
     const TArray<int32>& Ranking = GI->ScoreRanking;
 
@@ -56,6 +81,32 @@ void UResultWidget::UpdateResult()
             FString RankString =
                 FString::Printf(TEXT("%d : %d"), i + 1, Ranking[i]);
             RankTexts[i]->SetText(FText::FromString(RankString));
+
+            // é †ä½ã”ã¨ã®è£…é£¾
+            FSlateFontInfo Font = RankTexts[i]->Font;
+
+            if (i == 0) // 1ä½
+            {
+                Font.Size = 90;
+                RankTexts[i]->SetFont(Font);
+            }
+            else if (i == 1) // 2ä½
+            {
+                Font.Size = 90;
+                RankTexts[i]->SetColorAndOpacity(FLinearColor(FColor(46, 204, 113)));//ã‚·ãƒ«ãƒãƒ¼
+            }
+            else if (i == 2) // 3ä½
+            {
+                Font.Size = 90;
+                RankTexts[i]->SetColorAndOpacity(FLinearColor(FColor(169, 7, 228)));//ç´«
+            }
+            else
+            {
+                Font.Size = 90;
+                RankTexts[i]->SetColorAndOpacity(FLinearColor(FColor(255, 255, 255)));//ç™½
+            }
+
+            RankTexts[i]->SetFont(Font);
         }
         else
         {

@@ -188,7 +188,7 @@ void AMyCharacter::TogglePhotoMode()
         SpringArm->bUsePawnControlRotation = true;
         FollowCamera->SetRelativeLocation(FVector(0.f, 0.f, 60.f));
 
-        TargetFOV = PhotoFOV; // ← ズームイン開始！
+        TargetFOV = PhotoFOV; 
 
         if (CameraUIClass && !CameraUIInstance)
         {
@@ -210,7 +210,7 @@ void AMyCharacter::TogglePhotoMode()
         SpringArm->bUsePawnControlRotation = true;
         FollowCamera->SetRelativeLocation(FVector::ZeroVector);
 
-        TargetFOV = DefaultFOV; // ← ズームアウト開始！
+        TargetFOV = DefaultFOV; 
 
         if (CameraUIInstance)
             CameraUIInstance->SetVisibility(ESlateVisibility::Hidden);
@@ -416,7 +416,7 @@ void AMyCharacter::Tick(float DeltaTime)
             Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(this)))
         {
             int32 Count = GI->GetCapturedPhotoCount();
-            FString Str = FString::Printf(TEXT("Photo: %d"), Count);
+            FString Str = FString::Printf(TEXT("Photo: %d / 10"), Count);
             PhotoCountText->SetText(FText::FromString(Str));
         }
     }
