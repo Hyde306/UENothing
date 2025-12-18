@@ -47,6 +47,21 @@ void AMyCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
+    if (UMyGameInstance* GI =
+        Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(this)))
+    {
+        if (GI->SelectedCharacter == ECharacterVisual::Boy)
+        {
+            GetMesh()->SetSkeletalMesh(BoyMesh);
+            GetMesh()->SetAnimInstanceClass(BoyAnimBP);
+        }
+        else
+        {
+            GetMesh()->SetSkeletalMesh(GirlMesh);
+            GetMesh()->SetAnimInstanceClass(GirlAnimBP);
+        }
+    }
+
     if (APlayerController* PC = Cast<APlayerController>(Controller))
     {
         if (UEnhancedInputLocalPlayerSubsystem* Subsystem =

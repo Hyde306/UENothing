@@ -11,7 +11,7 @@ void ATitleModeBase::BeginPlay()
         TitleScreenWidget = CreateWidget<UUserWidget>(GetWorld(), TitleScreenClass);
         if (TitleScreenWidget)
         {
-            TitleScreenWidget->AddToViewport();
+             TitleScreenWidget->AddToViewport();
 
             // 入力モードを UI 専用に切り替え（フォーカス設定は不要）
             APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);

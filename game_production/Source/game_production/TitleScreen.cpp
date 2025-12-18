@@ -1,6 +1,7 @@
 #include "TitleScreen.h"
 #include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
+#include "MyGameInstance.h"
 
 void UTitleScreen::NativeConstruct()
 {
@@ -9,6 +10,14 @@ void UTitleScreen::NativeConstruct()
     if (StartButton)
     {
         StartButton->OnClicked.AddDynamic(this, &UTitleScreen::OnStartClicked);
+    }
+    if (BoyButton)
+    {
+        BoyButton->OnClicked.AddDynamic(this, &UTitleScreen::OnBoyClicked);
+    }
+    if (GirlButton)
+    {
+        GirlButton->OnClicked.AddDynamic(this, &UTitleScreen::OnGirlClicked);
     }
 }
 void UTitleScreen::OnStartClicked()
@@ -25,4 +34,22 @@ void UTitleScreen::OnStartClicked()
 
     // ƒŒƒxƒ‹‘JˆÚ
     UGameplayStatics::OpenLevel(this, FName("Dungeon"));
+}
+
+void UTitleScreen::OnBoyClicked()
+{
+    if (UMyGameInstance* GI =
+        Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(this)))
+    {
+        GI->SelectedCharacter = ECharacterVisual::Boy;
+    }
+}
+
+void UTitleScreen::OnGirlClicked()
+{
+    if (UMyGameInstance* GI =
+        Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(this)))
+    {
+        GI->SelectedCharacter = ECharacterVisual::Girl;
+    }
 }

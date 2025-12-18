@@ -5,12 +5,22 @@
 #include "MySaveGame.h"
 #include "MyGameInstance.generated.h"
 
+UENUM(BlueprintType)
+enum class ECharacterVisual : uint8
+{
+    Boy,
+    Girl
+};
+
 UCLASS()
 class GAME_PRODUCTION_API UMyGameInstance : public UGameInstance
 {
     GENERATED_BODY()
 
 public:
+    UPROPERTY(BlueprintReadWrite)
+    ECharacterVisual SelectedCharacter = ECharacterVisual::Boy;
+
     // 撮影スポットごとの最高スコア
     UPROPERTY(BlueprintReadOnly)
     TMap<FString, int32> PhotoBestScores;

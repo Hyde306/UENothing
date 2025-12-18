@@ -5,6 +5,7 @@
 #include "InputActionValue.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
+#include "MyGameInstance.h"
 #include "MyCharacter.generated.h"
 
 UCLASS()
@@ -109,6 +110,18 @@ public:
 
     UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bIsTakingPhoto = false;
+
+    UPROPERTY(EditDefaultsOnly)
+    USkeletalMesh* BoyMesh;
+
+    UPROPERTY(EditDefaultsOnly)
+    TSubclassOf<UAnimInstance> BoyAnimBP;
+
+    UPROPERTY(EditDefaultsOnly)
+    USkeletalMesh* GirlMesh;
+
+    UPROPERTY(EditDefaultsOnly)
+    TSubclassOf<UAnimInstance> GirlAnimBP;
 
     // ===== ŽB‰eƒ^ƒCƒ€Œv‘ª =====
 
