@@ -123,6 +123,19 @@ public:
     UPROPERTY(EditDefaultsOnly)
     TSubclassOf<UAnimInstance> GirlAnimBP;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Input")
+    class UInputAction* IA_RKey;
+
+    // ===== リトライ入力状態 =====
+protected:
+    bool bRKeyDown = false;
+    bool bRetryTriggered = false;
+
+    void OnRPressed();
+    void OnRReleased();
+    void TryRetry();
+    void RetryGame();
+
     // ===== 撮影タイム計測 =====
 
     UFUNCTION(BlueprintCallable, Category = "Photo")

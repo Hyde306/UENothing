@@ -134,6 +134,11 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
             EnhancedInput->BindAction(IA_FinishGame, ETriggerEvent::Started, this, &AMyCharacter::FinishGame);
         }
 
+        if (IA_RKey)
+        {
+            EnhancedInput->BindAction(IA_RKey, ETriggerEvent::Started, this, &AMyCharacter::OnRPressed);
+            EnhancedInput->BindAction(IA_RKey, ETriggerEvent::Completed, this, &AMyCharacter::OnRReleased);
+        }
     }
 }
 
@@ -460,4 +465,30 @@ void AMyCharacter::StopRun()
 {
     bIsRunning = false;
     GetCharacterMovement()->MaxWalkSpeed = 300.f;
+}
+
+void AMyCharacter::OnRPressed()
+{
+    bRKeyDown = true;
+    TryRetry();
+}
+
+void AMyCharacter::OnRReleased()
+{
+    bRKeyDown = false;
+    bRetryTriggered = false;
+}
+
+void AMyCharacter::TryRetry()
+{
+    if (bRKeyDown && !bRetryTriggered)
+    {
+        bRetryTriggered = true;
+        RetryGame();
+    }
+}
+
+void AMyCharacter::RetryGame()
+{
+    UGameplayStatics::OpenLevel(this, FName(*GetWorld()->GetName()));
 }
