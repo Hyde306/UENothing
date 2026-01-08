@@ -16,12 +16,37 @@ class GAME_PRODUCTION_API AMyCharacter : public ACharacter
 public:
     AMyCharacter();
 
+    UPROPERTY(BlueprintReadOnly, Category = "State")
+    bool bIsRunning = false;
+
+    UPROPERTY(BlueprintReadOnly, Category = "State")
+    bool bIsJumping = false;
+
+    UPROPERTY(BlueprintReadOnly, Category = "State")
+    bool bIsInPhotoMode = false;
+
+    UPROPERTY(BlueprintReadOnly, Category = "State")
+    bool bIsTakingPhoto = false;
+
+    // boyとgirlメッシュ選択
+    UPROPERTY(EditDefaultsOnly)
+    USkeletalMesh* BoyMesh;
+
+    UPROPERTY(EditDefaultsOnly)
+    TSubclassOf<UAnimInstance> BoyAnimBP;
+
+    UPROPERTY(EditDefaultsOnly)
+    USkeletalMesh* GirlMesh;
+
+    UPROPERTY(EditDefaultsOnly)
+    TSubclassOf<UAnimInstance> GirlAnimBP;
+
 protected:
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
     virtual void Tick(float DeltaTime) override;
 
-    // ===== 入力処理 =====
+    // 入力処理
     void Move(const FInputActionValue& Value);
     void Look(const FInputActionValue& Value);
     void StartJump();
@@ -31,13 +56,20 @@ protected:
     void TogglePhotoMode();
     void TakePhoto();
     void FinishGame();
+    void OnRPressed();
+    void OnRReleased();
+    void TryRetry();
+    void RetryGame();
 
     float DefaultFOV = 90.f;
     float PhotoFOV = 45.f;
     float ZoomInterpSpeed = 8.f;
     float TargetFOV = 90.f;
 
-    // ===== Enhanced Input =====
+    bool bRKeyDown = false;
+    bool bRetryTriggered = false;
+
+    // Inputアクション
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     class UInputMappingContext* IMC_Player;
 
@@ -62,14 +94,16 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
     class UInputAction* IA_FinishGame;
 
-    // ===== カメラ =====
+    UPROPERTY(EditDefaultsOnly, Category = "Input")
+    class UInputAction* IA_RKey;
+    // カメラ
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
     class USpringArmComponent* SpringArm;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
     class UCameraComponent* FollowCamera;
 
-    // ===== UI =====
+    // UI
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
     TSubclassOf<UUserWidget> CameraUIClass;
 
@@ -96,50 +130,10 @@ protected:
     UPROPERTY()
     class UResultWidget* ResultWidgetInstance;
 
-
-    // ===== 状態 =====
-public:
-    UPROPERTY(BlueprintReadOnly, Category = "State")
-    bool bIsRunning = false;
-
-    UPROPERTY(BlueprintReadOnly, Category = "State")
-    bool bIsJumping = false;
-
-    UPROPERTY(BlueprintReadOnly, Category = "State")
-    bool bIsInPhotoMode = false;
-
-    UPROPERTY(BlueprintReadOnly, Category = "State")
-    bool bIsTakingPhoto = false;
-
-    UPROPERTY(EditDefaultsOnly)
-    USkeletalMesh* BoyMesh;
-
-    UPROPERTY(EditDefaultsOnly)
-    TSubclassOf<UAnimInstance> BoyAnimBP;
-
-    UPROPERTY(EditDefaultsOnly)
-    USkeletalMesh* GirlMesh;
-
-    UPROPERTY(EditDefaultsOnly)
-    TSubclassOf<UAnimInstance> GirlAnimBP;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Input")
-    class UInputAction* IA_RKey;
-
-    // ===== リトライ入力状態 =====
-protected:
-    bool bRKeyDown = false;
-    bool bRetryTriggered = false;
-
-    void OnRPressed();
-    void OnRReleased();
-    void TryRetry();
-    void RetryGame();
-
-    // ===== 撮影タイム計測 =====
-
+    // 撮影タイム計測
     UFUNCTION(BlueprintCallable, Category = "Photo")
     float GetPhotoElapsedTime() const { return PhotoElapsedTime; }
+    
 private:
     float PhotoStartTime = 0.f;
     float PhotoElapsedTime = 0.f;

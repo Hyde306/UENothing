@@ -32,17 +32,15 @@ AMyCharacter::AMyCharacter()
     FollowCamera->bUsePawnControlRotation = false;
 
     bUseControllerRotationYaw = false;
+
     GetCharacterMovement()->bOrientRotationToMovement = false;
     GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
-
     GetCharacterMovement()->AirControl = 0.35f;
     GetCharacterMovement()->JumpZVelocity = 420.f;
     GetCharacterMovement()->MaxWalkSpeed = 300.f;
 }
 
-// ===========================
 // BeginPlay
-// ===========================
 void AMyCharacter::BeginPlay()
 {
     Super::BeginPlay();
@@ -92,13 +90,9 @@ void AMyCharacter::BeginPlay()
         PhotoCountText =
             Cast<UTextBlock>(TimerUIInstance->GetWidgetFromName(TEXT("PhotoCountText")));
     }
-
-
 }
 
-// ===========================
 // 入力設定
-// ===========================
 void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -142,9 +136,7 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
     }
 }
 
-// ===========================
 // 移動
-// ===========================
 void AMyCharacter::Move(const FInputActionValue& Value)
 {
     if (bIsInPhotoMode) return;
@@ -170,9 +162,7 @@ void AMyCharacter::Move(const FInputActionValue& Value)
     }
 }
 
-// ===========================
 // Look 操作
-// ===========================
 void AMyCharacter::Look(const FInputActionValue& Value)
 {
     FVector2D Axis = Value.Get<FVector2D>();
@@ -191,9 +181,7 @@ void AMyCharacter::Look(const FInputActionValue& Value)
     }
 }
 
-// ===========================
 // フォトモード切替
-// ===========================
 void AMyCharacter::TogglePhotoMode()
 {
     bIsInPhotoMode = !bIsInPhotoMode;
@@ -239,9 +227,7 @@ void AMyCharacter::TogglePhotoMode()
     }
 }
 
-// ===========================
 // 撮影処理
-// ===========================
 void AMyCharacter::TakePhoto()
 {
     if (!bIsInPhotoMode || bIsTakingPhoto) return;
@@ -308,7 +294,7 @@ void AMyCharacter::TakePhoto()
     }
     else
     {
-        ResultMessage = TEXT("                  撮影失敗");
+        ResultMessage = TEXT("    撮影失敗");
         FlashColor = FLinearColor::Red;
     }
 
@@ -363,7 +349,6 @@ void AMyCharacter::TakePhoto()
         }, 1.0f, false);
 }
 
-
 void AMyCharacter::FinishGame()
 {
     UE_LOG(LogTemp, Warning, TEXT("FinishGame CALLED"));
@@ -408,10 +393,7 @@ void AMyCharacter::FinishGame()
     }
 }
 
-
-// ===========================
 // Tick
-// ===========================
 void AMyCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
