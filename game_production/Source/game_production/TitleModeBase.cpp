@@ -13,14 +13,14 @@ void ATitleModeBase::BeginPlay()
         {
              TitleScreenWidget->AddToViewport();
 
-            // 入力モードを UI 専用に切り替え（フォーカス設定は不要）
+            // 入力モードを UI 専用に切り替え
             APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
             if (PC)
             {
                 PC->bShowMouseCursor = true;
 
                 FInputModeUIOnly InputMode;
-                PC->SetInputMode(InputMode); // ← SetWidgetToFocus は削除
+                PC->SetInputMode(InputMode);
             }
         }
     }
