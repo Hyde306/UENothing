@@ -33,6 +33,9 @@ public:
     UPROPERTY(BlueprintReadOnly)
     TArray<int32> ScoreRanking;
 
+    UFUNCTION(BlueprintCallable)
+    void ResetPhotoScores();
+
     // 撮影スコア更新
     void UpdatePhotoScore(const FString& SpotName, int32 Score);
 

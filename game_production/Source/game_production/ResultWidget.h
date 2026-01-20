@@ -42,6 +42,12 @@ protected:
     UPROPERTY(meta = (BindWidget))
     class UTextBlock* TimeText;
 
+    UPROPERTY(meta = (BindWidget))
+    class UButton* ExitButton;
+
+    UFUNCTION()
+    void OnExitClicked();
+
 public:
     void UpdateResult();
 };

@@ -113,3 +113,9 @@ int32 UMyGameInstance::GetCapturedPhotoCount() const
 {
     return PhotoBestScores.Num();
 }
+
+void UMyGameInstance::ResetPhotoScores()
+{
+    PhotoBestScores.Empty();   // 撮影スコアを全部消す
+    ClearTime = 0.0f;
+}

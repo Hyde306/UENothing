@@ -23,6 +23,11 @@ protected:
     UPROPERTY(meta = (BindWidget))
     class UButton* GirlButton;
 
+    UPROPERTY(meta = (BindWidget))
+    class UButton* ExitButton;
+
+    UFUNCTION()
+    void OnExitClicked();
     // ボタンイベント
     UFUNCTION()
     void OnStartClicked();

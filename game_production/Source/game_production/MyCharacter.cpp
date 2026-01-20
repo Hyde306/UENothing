@@ -472,5 +472,10 @@ void AMyCharacter::TryRetry()
 
 void AMyCharacter::RetryGame()
 {
+    if (UMyGameInstance* GI = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(this)))
+    {
+        GI->ResetPhotoScores();
+    }
+
     UGameplayStatics::OpenLevel(this, FName(*GetWorld()->GetName()));
 }

@@ -1,6 +1,7 @@
 ﻿#include "ResultWidget.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/Button.h"
 #include "MyGameInstance.h"
 
 void UResultWidget::NativeConstruct()
@@ -9,6 +10,11 @@ void UResultWidget::NativeConstruct()
 
     TotalScoreText = Cast<UTextBlock>(GetWidgetFromName(TEXT("TotalScoreText")));
     TimeText = Cast<UTextBlock>(GetWidgetFromName(TEXT("TimeText")));
+
+    if (ExitButton)
+    {
+        ExitButton->OnClicked.AddDynamic(this, &UResultWidget::OnExitClicked);
+    }
 
     UpdateResult();
 }
@@ -114,4 +120,17 @@ void UResultWidget::UpdateResult()
         }
     }
 
+}
+
+void UResultWidget::OnExitClicked()
+{
+    APlayerController* PC = GetWorld()->GetFirstPlayerController();
+    if (!PC) return;
+
+    UKismetSystemLibrary::QuitGame(
+        GetWorld(),
+        PC,
+        EQuitPreference::Quit,
+        false
+    );
 }

@@ -19,6 +19,10 @@ void UTitleScreen::NativeConstruct()
     {
         GirlButton->OnClicked.AddDynamic(this, &UTitleScreen::OnGirlClicked);
     }
+    if (ExitButton)
+    {
+        ExitButton->OnClicked.AddDynamic(this, &UTitleScreen::OnExitClicked);
+    }
 }
 void UTitleScreen::OnStartClicked()
 {
@@ -52,4 +56,17 @@ void UTitleScreen::OnGirlClicked()
     {
         GI->SelectedCharacter = ECharacterVisual::Girl;
     }
+}
+
+void UTitleScreen::OnExitClicked()
+{
+    APlayerController* PC = GetWorld()->GetFirstPlayerController();
+    if (!PC) return;
+
+    UKismetSystemLibrary::QuitGame(
+        GetWorld(),
+        PC,
+        EQuitPreference::Quit,
+        false
+    );
 }
