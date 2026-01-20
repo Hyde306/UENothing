@@ -289,12 +289,12 @@ void AMyCharacter::TakePhoto()
     FLinearColor FlashColor;
     if (HitSpot)
     {
-        ResultMessage = FString::Printf(TEXT("%s 撮影成功！\n         スコア: %d"), *HitSpot->GetSpotName(), HitScore);
+        ResultMessage = FString::Printf(TEXT("%s 撮影成功！\n                   スコア: %d"), *HitSpot->GetSpotName(), HitScore);
         FlashColor = FLinearColor::White;
     }
     else
     {
-        ResultMessage = TEXT("    撮影失敗");
+        ResultMessage = TEXT("                      撮影失敗");
         FlashColor = FLinearColor::Red;
     }
 

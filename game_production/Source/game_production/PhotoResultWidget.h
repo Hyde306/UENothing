@@ -6,7 +6,6 @@
 #include "Blueprint/UserWidget.h"
 #include "PhotoResultWidget.generated.h"
 
-
 UCLASS()
 class GAME_PRODUCTION_API UPhotoResultWidget : public UUserWidget
 {
