@@ -32,6 +32,12 @@ protected:
     UFUNCTION()
     void OnHowToPlayClicked();
 
+    UPROPERTY(meta = (BindWidget))
+    class UButton* GameRulesButton;
+
+    UFUNCTION()
+    void OnGameRulesClicked();
+
     UFUNCTION()
     void OnExitClicked();
     // ボタンイベント
@@ -43,4 +49,6 @@ protected:
 
     UFUNCTION()
     void OnGirlClicked();
+
+
 };

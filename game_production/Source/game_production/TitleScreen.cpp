@@ -27,6 +27,10 @@ void UTitleScreen::NativeConstruct()
     {
         HowToPlayButton->OnClicked.AddDynamic(this, &UTitleScreen::OnHowToPlayClicked);
     }
+    if (GameRulesButton)
+    {
+        GameRulesButton->OnClicked.AddDynamic(this,&UTitleScreen::OnGameRulesClicked);
+    }
 }
 void UTitleScreen::OnStartClicked()
 {
@@ -87,4 +91,18 @@ void UTitleScreen::OnHowToPlayClicked()
     }
 
     UGameplayStatics::OpenLevel(this, FName("HowToPlay"));
+}
+
+void UTitleScreen::OnGameRulesClicked()
+{
+    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+    if (PC)
+    {
+        PC->bShowMouseCursor = true;
+
+        FInputModeUIOnly InputMode;
+        PC->SetInputMode(InputMode);
+    }
+
+    UGameplayStatics::OpenLevel(this, FName("GameRules"));
 }
