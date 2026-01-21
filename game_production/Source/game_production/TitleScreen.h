@@ -26,6 +26,12 @@ protected:
     UPROPERTY(meta = (BindWidget))
     class UButton* ExitButton;
 
+    UPROPERTY(meta = (BindWidget))
+    class UButton* HowToPlayButton;
+
+    UFUNCTION()
+    void OnHowToPlayClicked();
+
     UFUNCTION()
     void OnExitClicked();
     // ボタンイベント

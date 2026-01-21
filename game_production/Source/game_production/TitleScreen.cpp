@@ -23,6 +23,10 @@ void UTitleScreen::NativeConstruct()
     {
         ExitButton->OnClicked.AddDynamic(this, &UTitleScreen::OnExitClicked);
     }
+    if (HowToPlayButton)
+    {
+        HowToPlayButton->OnClicked.AddDynamic(this, &UTitleScreen::OnHowToPlayClicked);
+    }
 }
 void UTitleScreen::OnStartClicked()
 {
@@ -69,4 +73,18 @@ void UTitleScreen::OnExitClicked()
         EQuitPreference::Quit,
         false
     );
+}
+
+void UTitleScreen::OnHowToPlayClicked()
+{
+    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+    if (PC)
+    {
+        PC->bShowMouseCursor = true;
+
+        FInputModeUIOnly InputMode;
+        PC->SetInputMode(InputMode);
+    }
+
+    UGameplayStatics::OpenLevel(this, FName("HowToPlay"));
 }
