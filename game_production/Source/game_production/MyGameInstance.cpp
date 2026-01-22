@@ -1,5 +1,6 @@
 #include "MyGameInstance.h"
 #include "Kismet/GameplayStatics.h"
+#include "MySaveGame.h"
 
 // =======================
 // 起動時
@@ -50,19 +51,21 @@ int32 UMyGameInstance::GetTotalScore() const
 // =======================
 // ランキング追加
 // =======================
-void UMyGameInstance::AddScoreToRanking(int32 FinalScore)
+void UMyGameInstance::AddScoreToRanking(const FString& PlayerName, int32 FinalScore)
 {
-    ScoreRanking.Add(FinalScore);
+    FRankingData NewData;
+    NewData.PlayerName = PlayerName;
+    NewData.Score = FinalScore;
 
-    ScoreRanking.Sort([](int32 A, int32 B)
+    ScoreRanking.Add(NewData);
+
+    ScoreRanking.Sort([](const FRankingData& A, const FRankingData& B)
         {
-            return A > B;
+            return A.Score > B.Score;
         });
 
     if (ScoreRanking.Num() > 6)
-    {
         ScoreRanking.SetNum(6);
-    }
 
 #if !WITH_EDITOR
     SaveRanking();
@@ -91,24 +94,6 @@ void UMyGameInstance::LoadRanking()
 // =======================
 // セーブ
 // =======================
-void UMyGameInstance::SaveRanking()
-{
-    UMySaveGame* SaveData =
-        Cast<UMySaveGame>(
-            UGameplayStatics::CreateSaveGameObject(UMySaveGame::StaticClass())
-        );
-
-    if (!SaveData) return;
-
-    SaveData->ScoreRanking = ScoreRanking;
-
-    UGameplayStatics::SaveGameToSlot(
-        SaveData,
-        SaveSlotName,
-        SaveUserIndex
-    );
-}
-
 int32 UMyGameInstance::GetCapturedPhotoCount() const
 {
     return PhotoBestScores.Num();
@@ -118,4 +103,30 @@ void UMyGameInstance::ResetPhotoScores()
 {
     PhotoBestScores.Empty();   // 撮影スコアを全部消す
     ClearTime = 0.0f;
+}
+
+bool UMyGameInstance::IsRankIn(int32 NewScore) const
+{
+    int32 Count = 0;
+    for (const FRankingData& Data : ScoreRanking)
+    {
+        if (NewScore <= Data.Score)
+            Count++;
+    }
+    return Count < 6;
+}
+
+void UMyGameInstance::SaveRanking()
+{
+    UMySaveGame* SaveData = Cast<UMySaveGame>(
+        UGameplayStatics::CreateSaveGameObject(UMySaveGame::StaticClass())
+    );
+
+    if (!SaveData) return;
+
+    // ランキングを保存
+    SaveData->ScoreRanking = ScoreRanking;
+
+    // セーブ
+    UGameplayStatics::SaveGameToSlot(SaveData, SaveSlotName, SaveUserIndex);
 }

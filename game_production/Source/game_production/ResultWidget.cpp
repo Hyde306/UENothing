@@ -1,27 +1,34 @@
 ﻿#include "ResultWidget.h"
 #include "Components/TextBlock.h"
-#include "Kismet/GameplayStatics.h"
 #include "Components/Button.h"
+#include "Components/EditableTextBox.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "MyGameInstance.h"
 
 void UResultWidget::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    TotalScoreText = Cast<UTextBlock>(GetWidgetFromName(TEXT("TotalScoreText")));
-    TimeText = Cast<UTextBlock>(GetWidgetFromName(TEXT("TimeText")));
-
     if (ExitButton)
-    {
         ExitButton->OnClicked.AddDynamic(this, &UResultWidget::OnExitClicked);
+
+    if (DecideButton)
+    {
+        DecideButton->OnClicked.AddDynamic(this, &UResultWidget::OnDecideClicked);
+        DecideButton->SetVisibility(ESlateVisibility::Collapsed);
+    }
+
+    if (NameInputBox)
+    {
+        NameInputBox->OnTextChanged.AddDynamic(this, &UResultWidget::OnNameChanged);
+        NameInputBox->SetVisibility(ESlateVisibility::Collapsed);
     }
 
     UpdateResult();
 }
 
-void UResultWidget::NativeTick(
-    const FGeometry& MyGeometry,
-    float InDeltaTime)
+void UResultWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
     Super::NativeTick(MyGeometry, InDeltaTime);
 
@@ -29,17 +36,19 @@ void UResultWidget::NativeTick(
 
     if (Rank1Text)
     {
-        // 色相を回す（0〜360）
         float Hue = FMath::Fmod(RainbowTime * 120.f, 360.f);
-
-        FLinearColor RainbowColor =
-            FLinearColor::MakeFromHSV8(
-                (uint8)(Hue / 360.f * 255.f),
-                255,
-                255
-            );
-
+        FLinearColor RainbowColor = FLinearColor::MakeFromHSV8(
+            (uint8)(Hue / 360.f * 255.f), 255, 255);
         Rank1Text->SetColorAndOpacity(RainbowColor);
+    }
+    if (Rank2Text)
+    {
+        Rank2Text->SetColorAndOpacity(FLinearColor(0.2f, 0.4f, 1.0f)); // 青
+    }
+
+    if (Rank3Text)
+    {
+        Rank3Text->SetColorAndOpacity(FLinearColor(0.2f, 1.0f, 0.3f)); // 緑
     }
 }
 
@@ -49,34 +58,30 @@ void UResultWidget::UpdateResult()
     if (!GI) return;
 
     int32 TotalScore = GI->GetTotalScore();
-    int32 ElapsedTime = FMath::FloorToInt(GI->ClearTime); // タイムを整数化
+    int32 ElapsedTime = FMath::FloorToInt(GI->ClearTime);
 
-    // タイムをスコアに換算
     int32 TimeScore = 600 - (ElapsedTime / 15) * 10;
-    TimeScore = FMath::Max(TimeScore, 0); // 最低スコアは0
+    TimeScore = FMath::Max(TimeScore, 0);
 
     int32 CombinedScore = TotalScore + TimeScore;
+    GI->LastFinalScore = CombinedScore;
 
     if (TotalScoreText)
-    {
-        FString ScoreString = FString::Printf(TEXT("Score: %d"), CombinedScore);
-        TotalScoreText->SetText(FText::FromString(ScoreString));
-        TotalScoreText->SetColorAndOpacity(FLinearColor(FColor(255, 255, 0)));
-    }
+        TotalScoreText->SetText(FText::FromString(FString::Printf(TEXT("Score: %d"), CombinedScore)));
 
     if (TimeText)
-    {
-        FString TimeString = FString::Printf(TEXT("Time: %d"), ElapsedTime);
-        TimeText->SetText(FText::FromString(TimeString));
-        TimeText->SetColorAndOpacity(FLinearColor(FColor(0, 0, 255)));
-    }
-    const TArray<int32>& Ranking = GI->ScoreRanking;
+        TimeText->SetText(FText::FromString(FString::Printf(TEXT("Time: %d"), ElapsedTime)));
 
-    UTextBlock* RankTexts[6] =
+    // 名前入力は6位以内かつ未表示の場合のみ
+    if (GI->IsRankIn(CombinedScore) && !bNameInputShown)
     {
-        Rank1Text, Rank2Text, Rank3Text,
-        Rank4Text, Rank5Text, Rank6Text
-    };
+        ShowNameInput();
+        bNameInputShown = true;
+    }
+
+    // ランキング表示は既存のランキングのみ
+    const TArray<FRankingData>& Ranking = GI->ScoreRanking;
+    UTextBlock* RankTexts[6] = { Rank1Text, Rank2Text, Rank3Text, Rank4Text, Rank5Text, Rank6Text };
 
     for (int32 i = 0; i < 6; i++)
     {
@@ -84,53 +89,109 @@ void UResultWidget::UpdateResult()
 
         if (Ranking.IsValidIndex(i))
         {
-            FString RankString =
-                FString::Printf(TEXT("%d : %d"), i + 1, Ranking[i]);
+            FString RankString = FString::Printf(TEXT("%d.%s  %d"),
+                i + 1, *Ranking[i].PlayerName, Ranking[i].Score);
             RankTexts[i]->SetText(FText::FromString(RankString));
-
-            // 順位ごとの装飾
-            FSlateFontInfo Font = RankTexts[i]->Font;
-
-            if (i == 0) // 1位
-            {
-                Font.Size = 90;
-                RankTexts[i]->SetFont(Font);
-            }
-            else if (i == 1) // 2位
-            {
-                Font.Size = 90;
-                RankTexts[i]->SetColorAndOpacity(FLinearColor(FColor(46, 204, 113)));//シルバー
-            }
-            else if (i == 2) // 3位
-            {
-                Font.Size = 90;
-                RankTexts[i]->SetColorAndOpacity(FLinearColor(FColor(169, 7, 228)));//紫
-            }
-            else
-            {
-                Font.Size = 90;
-                RankTexts[i]->SetColorAndOpacity(FLinearColor(FColor(255, 255, 255)));//白
-            }
-
-            RankTexts[i]->SetFont(Font);
         }
         else
         {
             RankTexts[i]->SetText(FText::FromString(TEXT("-")));
         }
     }
-
 }
+
+void UResultWidget::ShowNameInput()
+{
+    if (NameInputBox && DecideButton)
+    {
+        NameInputBox->SetVisibility(ESlateVisibility::Visible);
+        DecideButton->SetVisibility(ESlateVisibility::Visible);
+        NameInputBox->SetText(FText::FromString(TEXT("")));
+    }
+}
+
+void UResultWidget::OnNameChanged(const FText& Text)
+{
+    if (!NameInputBox) return;
+
+    FString Input = Text.ToString();
+    FString Filtered;
+
+    int32 Width = 0;
+    int32 JapaneseCount = 0;
+
+    for (TCHAR C : Input)
+    {
+        // 半角英数字（ASCII）
+        bool bIsHalfWidth = (C >= 0x21 && C <= 0x7E);
+
+        // 絵文字（禁止）
+        bool bIsEmoji = (C >= 0x1F300 && C <= 0x1FAFF);
+        if (bIsEmoji)
+        {
+            continue;
+        }
+
+        // 全角判定（ASCII 以外は全部全角扱い）
+        bool bIsFullWidth = !bIsHalfWidth;
+
+        int32 CharWidth = bIsFullWidth ? 2 : 1;
+
+        // 日本語（全角）は最大3文字
+        if (bIsFullWidth)
+        {
+            if (JapaneseCount >= 3)
+            {
+                continue;
+            }
+        }
+
+        // 幅6を超えるなら追加しない
+        if (Width + CharWidth > 6)
+        {
+            break;
+        }
+
+        Filtered.AppendChar(C);
+        Width += CharWidth;
+
+        if (bIsFullWidth)
+        {
+            JapaneseCount++;
+        }
+    }
+
+    if (Filtered != Input)
+    {
+        NameInputBox->SetText(FText::FromString(Filtered));
+    }
+}
+
+
+void UResultWidget::OnDecideClicked()
+{
+    if (!NameInputBox) return;
+
+    FString PlayerName = NameInputBox->GetText().ToString();
+    if (PlayerName.Len() == 0) return;
+
+    UMyGameInstance* GI = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(this));
+    if (!GI) return;
+
+    // 決定時にのみランキング追加
+    GI->AddScoreToRanking(PlayerName, GI->LastFinalScore);
+
+    NameInputBox->SetVisibility(ESlateVisibility::Collapsed);
+    DecideButton->SetVisibility(ESlateVisibility::Collapsed);
+
+    UpdateResult(); // UI更新
+}
+
 
 void UResultWidget::OnExitClicked()
 {
     APlayerController* PC = GetWorld()->GetFirstPlayerController();
     if (!PC) return;
 
-    UKismetSystemLibrary::QuitGame(
-        GetWorld(),
-        PC,
-        EQuitPreference::Quit,
-        false
-    );
+    UKismetSystemLibrary::QuitGame(GetWorld(), PC, EQuitPreference::Quit, false);
 }

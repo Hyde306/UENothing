@@ -370,9 +370,6 @@ void AMyCharacter::FinishGame()
     // 最終スコア確定
     int32 FinalScore = PhotoScore + TimeScore;
 
-    // ランキングに登録
-    GI->AddScoreToRanking(FinalScore);
-
     // リザルトUI表示
     if (ResultWidgetClass)
     {
