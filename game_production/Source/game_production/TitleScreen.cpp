@@ -50,20 +50,28 @@ void UTitleScreen::OnStartClicked()
 
 void UTitleScreen::OnBoyClicked()
 {
+    SelectedCharacter = ECharacterSelect::Boy;
+
     if (UMyGameInstance* GI =
         Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(this)))
     {
         GI->SelectedCharacter = ECharacterVisual::Boy;
     }
+
+    UpdateCharacterImages();
 }
 
 void UTitleScreen::OnGirlClicked()
 {
+    SelectedCharacter = ECharacterSelect::Girl;
+
     if (UMyGameInstance* GI =
         Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(this)))
     {
         GI->SelectedCharacter = ECharacterVisual::Girl;
     }
+
+    UpdateCharacterImages();
 }
 
 void UTitleScreen::OnExitClicked()
@@ -105,4 +113,17 @@ void UTitleScreen::OnGameRulesClicked()
     }
 
     UGameplayStatics::OpenLevel(this, FName("GameRules"));
+}
+
+void UTitleScreen::UpdateCharacterImages()
+{
+    if (BoyButton)
+    {
+        BoyButton->SetIsEnabled(SelectedCharacter != ECharacterSelect::Boy);
+    }
+
+    if (GirlButton)
+    {
+        GirlButton->SetIsEnabled(SelectedCharacter != ECharacterSelect::Girl);
+    }
 }

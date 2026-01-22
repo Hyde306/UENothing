@@ -4,6 +4,15 @@
 #include "Blueprint/UserWidget.h"
 #include "TitleScreen.generated.h"
 
+// 選択状態
+UENUM(BlueprintType)
+enum class ECharacterSelect : uint8
+{
+    None,
+    Boy,
+    Girl
+};
+
 UCLASS()
 class GAME_PRODUCTION_API UTitleScreen : public UUserWidget
 {
@@ -29,17 +38,12 @@ protected:
     UPROPERTY(meta = (BindWidget))
     class UButton* HowToPlayButton;
 
-    UFUNCTION()
-    void OnHowToPlayClicked();
-
     UPROPERTY(meta = (BindWidget))
     class UButton* GameRulesButton;
 
-    UFUNCTION()
-    void OnGameRulesClicked();
+    // 選択状態
+    ECharacterSelect SelectedCharacter = ECharacterSelect::None;
 
-    UFUNCTION()
-    void OnExitClicked();
     // ボタンイベント
     UFUNCTION()
     void OnStartClicked();
@@ -50,5 +54,15 @@ protected:
     UFUNCTION()
     void OnGirlClicked();
 
+    UFUNCTION()
+    void OnHowToPlayClicked();
 
+    UFUNCTION()
+    void OnGameRulesClicked();
+
+    UFUNCTION()
+    void OnExitClicked();
+
+    UFUNCTION()
+    void UpdateCharacterImages();
 };
