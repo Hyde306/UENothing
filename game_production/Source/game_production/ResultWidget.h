@@ -30,6 +30,12 @@ protected:
     UFUNCTION()
     void OnExitClicked();
 
+    UFUNCTION()
+    void PlaySoundAndQuit();
+
+    UFUNCTION()
+    void DelayedQuit();
+
     UPROPERTY(meta = (BindWidget))
     UTextBlock* TotalScoreText;
 
@@ -59,8 +65,12 @@ protected:
     UButton* ExitButton;
 
     UPROPERTY()
-bool bNameInputShown = false;
+    bool bNameInputShown = false;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sound")
+    USoundBase* ButtonClickSound;
+
+    FTimerHandle TransitionTimer;
 private:
     float RainbowTime = 0.0f;
 };

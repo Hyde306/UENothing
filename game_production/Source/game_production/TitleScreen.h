@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Sound/SoundBase.h"
 #include "TitleScreen.generated.h"
 
 // 選択状態
@@ -40,9 +41,18 @@ protected:
 
     UPROPERTY(meta = (BindWidget))
     class UButton* GameRulesButton;
+    // クリック音
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sound")
+    USoundBase* ButtonClickSound;
 
     // 選択状態
     ECharacterSelect SelectedCharacter = ECharacterSelect::None;
+
+    // 次に遷移するレベル名
+    FName NextLevelName;
+
+    // タイマー
+    FTimerHandle TransitionTimer;
 
     // ボタンイベント
     UFUNCTION()
@@ -65,4 +75,14 @@ protected:
 
     UFUNCTION()
     void UpdateCharacterImages();
+
+    // 共通処理
+    UFUNCTION()
+    void PlayClickSound();
+
+    UFUNCTION()
+    void PlaySoundAndOpenLevel(FName LevelName);
+
+    UFUNCTION()
+    void DelayedOpenLevel();
 };

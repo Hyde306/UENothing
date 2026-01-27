@@ -2,6 +2,7 @@
 #include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
 #include "MyGameInstance.h"
+#include "TimerManager.h"
 
 void UTitleScreen::NativeConstruct()
 {
@@ -34,22 +35,13 @@ void UTitleScreen::NativeConstruct()
 }
 void UTitleScreen::OnStartClicked()
 {
-    // “ü—Íƒ‚[ƒh‚ðƒQ[ƒ€‘€ì‚É–ß‚·
-    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-    if (PC)
-    {
-        PC->bShowMouseCursor = false;
-
-        FInputModeGameOnly InputMode;
-        PC->SetInputMode(InputMode);
-    }
-
-    // ƒŒƒxƒ‹‘JˆÚ
-    UGameplayStatics::OpenLevel(this, FName("Dungeon"));
+    PlaySoundAndOpenLevel("Dungeon");
 }
 
 void UTitleScreen::OnBoyClicked()
 {
+    PlayClickSound();
+
     SelectedCharacter = ECharacterSelect::Boy;
 
     if (UMyGameInstance* GI =
@@ -63,6 +55,8 @@ void UTitleScreen::OnBoyClicked()
 
 void UTitleScreen::OnGirlClicked()
 {
+    PlayClickSound();
+
     SelectedCharacter = ECharacterSelect::Girl;
 
     if (UMyGameInstance* GI =
@@ -76,6 +70,8 @@ void UTitleScreen::OnGirlClicked()
 
 void UTitleScreen::OnExitClicked()
 {
+    PlayClickSound();
+
     APlayerController* PC = GetWorld()->GetFirstPlayerController();
     if (!PC) return;
 
@@ -89,30 +85,13 @@ void UTitleScreen::OnExitClicked()
 
 void UTitleScreen::OnHowToPlayClicked()
 {
-    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-    if (PC)
-    {
-        PC->bShowMouseCursor = true;
-
-        FInputModeUIOnly InputMode;
-        PC->SetInputMode(InputMode);
-    }
-
-    UGameplayStatics::OpenLevel(this, FName("HowToPlay"));
+    PlaySoundAndOpenLevel("HowToPlay");
 }
+
 
 void UTitleScreen::OnGameRulesClicked()
 {
-    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-    if (PC)
-    {
-        PC->bShowMouseCursor = true;
-
-        FInputModeUIOnly InputMode;
-        PC->SetInputMode(InputMode);
-    }
-
-    UGameplayStatics::OpenLevel(this, FName("GameRules"));
+    PlaySoundAndOpenLevel("GameRules");
 }
 
 void UTitleScreen::UpdateCharacterImages()
@@ -126,4 +105,40 @@ void UTitleScreen::UpdateCharacterImages()
     {
         GirlButton->SetIsEnabled(SelectedCharacter != ECharacterSelect::Girl);
     }
+}
+
+void UTitleScreen::PlayClickSound()
+{
+    if (ButtonClickSound)
+    {
+        UGameplayStatics::PlaySound2D(this, ButtonClickSound);
+    }
+}
+
+void UTitleScreen::PlaySoundAndOpenLevel(FName LevelName)
+{
+    PlayClickSound();
+
+    NextLevelName = LevelName;
+
+    GetWorld()->GetTimerManager().SetTimer(
+        TransitionTimer,
+        this,
+        &UTitleScreen::DelayedOpenLevel,
+        0.25f,
+        false
+    );
+}
+
+void UTitleScreen::DelayedOpenLevel()
+{
+    APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+    if (PC)
+    {
+        PC->bShowMouseCursor = false;
+        FInputModeGameOnly InputMode;
+        PC->SetInputMode(InputMode);
+    }
+
+    UGameplayStatics::OpenLevel(this, NextLevelName);
 }

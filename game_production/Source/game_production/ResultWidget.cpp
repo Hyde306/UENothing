@@ -170,6 +170,11 @@ void UResultWidget::OnNameChanged(const FText& Text)
 
 void UResultWidget::OnDecideClicked()
 {
+    if (ButtonClickSound)
+    {
+        UGameplayStatics::PlaySound2D(this, ButtonClickSound);
+    }
+
     if (!NameInputBox) return;
 
     FString PlayerName = NameInputBox->GetText().ToString();
@@ -187,11 +192,36 @@ void UResultWidget::OnDecideClicked()
     UpdateResult(); // UI更新
 }
 
-
 void UResultWidget::OnExitClicked()
+{
+    PlaySoundAndQuit();
+}
+
+void UResultWidget::PlaySoundAndQuit()
+{
+    if (ButtonClickSound)
+    {
+        UGameplayStatics::PlaySound2D(this, ButtonClickSound);
+    }
+
+    GetWorld()->GetTimerManager().SetTimer(
+        TransitionTimer,
+        this,
+        &UResultWidget::DelayedQuit,
+        0.25f,
+        false
+    );
+}
+
+void UResultWidget::DelayedQuit()
 {
     APlayerController* PC = GetWorld()->GetFirstPlayerController();
     if (!PC) return;
 
-    UKismetSystemLibrary::QuitGame(GetWorld(), PC, EQuitPreference::Quit, false);
+    UKismetSystemLibrary::QuitGame(
+        GetWorld(),
+        PC,
+        EQuitPreference::Quit,
+        false
+    );
 }
