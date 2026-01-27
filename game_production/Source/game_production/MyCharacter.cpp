@@ -25,11 +25,17 @@ AMyCharacter::AMyCharacter()
     SpringArm->SetupAttachment(RootComponent);
     SpringArm->TargetArmLength = 300.f;
     SpringArm->bUsePawnControlRotation = true;
-    SpringArm->bDoCollisionTest = false;
+
+    // ★ カメラ衝突を有効化
+    SpringArm->bDoCollisionTest = true;
+    SpringArm->ProbeSize = 12.f;
+    SpringArm->ProbeChannel = ECC_Camera;
 
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-    FollowCamera->SetupAttachment(SpringArm);
+    // ★ Socket にアタッチ（テンプレと同じ）
+    FollowCamera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
     FollowCamera->bUsePawnControlRotation = false;
+
 
     bUseControllerRotationYaw = false;
 
