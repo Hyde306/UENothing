@@ -3,6 +3,7 @@
 
 #include "PhotoResultWidget.h"
 #include "Components/TextBlock.h"
+#include "Kismet/GameplayStatics.h"
 
 void UPhotoResultWidget::SetResultText(const FString& Text)
 {

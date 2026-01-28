@@ -38,6 +38,12 @@ public:
     UPROPERTY(EditDefaultsOnly)
     TSubclassOf<UAnimInstance> GirlAnimBP;
 
+    UPROPERTY(BlueprintReadOnly, Category = "Photo")
+    int32 SuccessfulPhotoCount = 0;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Sound")
+    USoundBase* ShutterSound;
+
 protected:
     virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;

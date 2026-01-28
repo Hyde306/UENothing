@@ -21,6 +21,15 @@ AMyCharacter::AMyCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
 
+    ShutterSound = nullptr;
+
+    CameraUIInstance = nullptr;
+    PhotoResultWidgetInstance = nullptr;
+    TimerUIInstance = nullptr;
+    TimerTextBlock = nullptr;
+    PhotoCountText = nullptr;
+    ResultWidgetInstance = nullptr;
+
     SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
     SpringArm->SetupAttachment(RootComponent);
     SpringArm->TargetArmLength = 300.f;
@@ -239,6 +248,11 @@ void AMyCharacter::TakePhoto()
     if (!bIsInPhotoMode || bIsTakingPhoto) return;
     bIsTakingPhoto = true;
 
+    if (ShutterSound)
+    {
+        UGameplayStatics::PlaySound2D(this, ShutterSound);
+    }
+
     FVector CameraLocation = FollowCamera->GetComponentLocation();
     APhotoSpot* HitSpot = nullptr;
     int32 HitScore = 0;
@@ -320,6 +334,7 @@ void AMyCharacter::TakePhoto()
                     Widget->PlayFadeOut();
                 }, 2.0f, false);
         }
+
     }
 
     // スクリーンショット保存
@@ -357,10 +372,16 @@ void AMyCharacter::TakePhoto()
 
 void AMyCharacter::FinishGame()
 {
-    UE_LOG(LogTemp, Warning, TEXT("FinishGame CALLED"));
-
     UMyGameInstance* GI = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(this));
     if (!GI) return;
+
+    // 撮影成功が1回未満なら終了不可
+    if (GI->GetCapturedPhotoCount() < 1)
+    {
+        return;
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("FinishGame CALLED"));
 
     // クリアタイム保存
     GI->SetClearTime(PhotoElapsedTime);
@@ -368,15 +389,13 @@ void AMyCharacter::FinishGame()
     // 撮影スコア合計
     int32 PhotoScore = GI->GetTotalScore();
 
-    // タイムスコア（15秒ごとに10点減点）
+    // タイムスコア
     int32 ElapsedTime = FMath::FloorToInt(PhotoElapsedTime);
     int32 TimeScore = 600 - (ElapsedTime / 15) * 10;
     TimeScore = FMath::Max(TimeScore, 0);
 
-    // 最終スコア確定
     int32 FinalScore = PhotoScore + TimeScore;
 
-    // リザルトUI表示
     if (ResultWidgetClass)
     {
         ResultWidgetInstance = CreateWidget<UResultWidget>(GetWorld(), ResultWidgetClass);
@@ -386,15 +405,14 @@ void AMyCharacter::FinishGame()
         }
     }
 
-    // 入力をUIに
     if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
     {
         PC->bShowMouseCursor = true;
-
         FInputModeUIOnly Mode;
         PC->SetInputMode(Mode);
     }
 }
+
 
 // Tick
 void AMyCharacter::Tick(float DeltaTime)
@@ -433,35 +451,29 @@ void AMyCharacter::StartJump()
     bIsJumping = true;
     Jump();
 }
-
 void AMyCharacter::StopJump()
 {
     bIsJumping = false;
     StopJumping();
 }
-
 void AMyCharacter::StartRun()
 {
     GetCharacterMovement()->MaxWalkSpeed = 300.f;
 }
-
 void AMyCharacter::StopRun()
 {
     GetCharacterMovement()->MaxWalkSpeed = 600.f;
 }
-
 void AMyCharacter::OnRPressed()
 {
     bRKeyDown = true;
     TryRetry();
 }
-
 void AMyCharacter::OnRReleased()
 {
     bRKeyDown = false;
     bRetryTriggered = false;
 }
-
 void AMyCharacter::TryRetry()
 {
     if (bRKeyDown && !bRetryTriggered)
@@ -470,7 +482,6 @@ void AMyCharacter::TryRetry()
         RetryGame();
     }
 }
-
 void AMyCharacter::RetryGame()
 {
     if (UMyGameInstance* GI = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(this)))

@@ -85,6 +85,9 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sound")
     USoundBase* ButtonClickSound;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sound")
+    USoundBase* ScoreSound;
+
 private:
     float RainbowTime = 0.0f;
 };

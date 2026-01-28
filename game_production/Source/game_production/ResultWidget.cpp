@@ -10,6 +10,11 @@ void UResultWidget::NativeConstruct()
 {
     Super::NativeConstruct();
 
+    if (ScoreSound)
+    {
+        UGameplayStatics::PlaySound2D(this, ScoreSound);
+    }
+
     if (ExitButton)
         ExitButton->OnClicked.AddDynamic(this, &UResultWidget::OnExitClicked);
 
