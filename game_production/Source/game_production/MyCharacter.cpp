@@ -26,13 +26,13 @@ AMyCharacter::AMyCharacter()
     SpringArm->TargetArmLength = 300.f;
     SpringArm->bUsePawnControlRotation = true;
 
-    // ★ カメラ衝突を有効化
+    // カメラ衝突を有効化
     SpringArm->bDoCollisionTest = true;
     SpringArm->ProbeSize = 12.f;
     SpringArm->ProbeChannel = ECC_Camera;
 
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-    // ★ Socket にアタッチ（テンプレと同じ）
+    // Socket にアタッチ（テンプレと同じ）
     FollowCamera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
     FollowCamera->bUsePawnControlRotation = false;
 
@@ -43,7 +43,7 @@ AMyCharacter::AMyCharacter()
     GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
     GetCharacterMovement()->AirControl = 0.35f;
     GetCharacterMovement()->JumpZVelocity = 420.f;
-    GetCharacterMovement()->MaxWalkSpeed = 300.f;
+    GetCharacterMovement()->MaxWalkSpeed = 600.f;
 }
 
 // BeginPlay
@@ -442,14 +442,12 @@ void AMyCharacter::StopJump()
 
 void AMyCharacter::StartRun()
 {
-    bIsRunning = true;
-    GetCharacterMovement()->MaxWalkSpeed = 600.f;
+    GetCharacterMovement()->MaxWalkSpeed = 300.f;
 }
 
 void AMyCharacter::StopRun()
 {
-    bIsRunning = false;
-    GetCharacterMovement()->MaxWalkSpeed = 300.f;
+    GetCharacterMovement()->MaxWalkSpeed = 600.f;
 }
 
 void AMyCharacter::OnRPressed()

@@ -20,6 +20,9 @@ protected:
     void UpdateResult();
     void ShowNameInput();
 
+    FTimerHandle TransitionTimer;
+    FName NextLevelName;
+
     // –¼‘O“ü—ÍŠÖ˜A
     UFUNCTION()
     void OnNameChanged(const FText& Text);
@@ -35,6 +38,18 @@ protected:
 
     UFUNCTION()
     void DelayedQuit();
+
+    UFUNCTION()
+    void OnBackClicked();
+
+    UFUNCTION()
+    void PlaySoundAndOpenLevel(FName LevelName);
+
+    UFUNCTION()
+    void DelayedOpenLevel();
+
+    UPROPERTY(meta = (BindWidget))
+    class UButton* BackButton;
 
     UPROPERTY(meta = (BindWidget))
     UTextBlock* TotalScoreText;
@@ -70,7 +85,6 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sound")
     USoundBase* ButtonClickSound;
 
-    FTimerHandle TransitionTimer;
 private:
     float RainbowTime = 0.0f;
 };

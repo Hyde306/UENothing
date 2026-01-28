@@ -17,9 +17,6 @@ public:
     AMyCharacter();
 
     UPROPERTY(BlueprintReadOnly, Category = "State")
-    bool bIsRunning = false;
-
-    UPROPERTY(BlueprintReadOnly, Category = "State")
     bool bIsJumping = false;
 
     UPROPERTY(BlueprintReadOnly, Category = "State")

@@ -25,6 +25,11 @@ void UResultWidget::NativeConstruct()
         NameInputBox->SetVisibility(ESlateVisibility::Collapsed);
     }
 
+    if (BackButton)
+    {
+        BackButton->OnClicked.AddDynamic(this, &UResultWidget::OnBackClicked);
+    }
+
     UpdateResult();
 }
 
@@ -224,4 +229,32 @@ void UResultWidget::DelayedQuit()
         EQuitPreference::Quit,
         false
     );
+}
+
+void UResultWidget::OnBackClicked()
+{
+    PlaySoundAndOpenLevel("Title");
+}
+
+void UResultWidget::PlaySoundAndOpenLevel(FName LevelName)
+{
+    if (ButtonClickSound)
+    {
+        UGameplayStatics::PlaySound2D(this, ButtonClickSound);
+    }
+
+    NextLevelName = LevelName;
+
+    GetWorld()->GetTimerManager().SetTimer(
+        TransitionTimer,
+        this,
+        &UResultWidget::DelayedOpenLevel,
+        0.25f,
+        false
+    );
+}
+
+void UResultWidget::DelayedOpenLevel()
+{
+    UGameplayStatics::OpenLevel(this, NextLevelName);
 }
